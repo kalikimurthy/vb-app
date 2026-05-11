@@ -1,0 +1,27 @@
+import { Routes } from '@angular/router';
+import { DashboardPageComponent } from './features/dashboard/dashboard-page.component';
+import { TournamentsPageComponent } from './features/tournaments/tournaments-page.component';
+import { TournamentDetailPageComponent } from './features/tournaments/tournament-detail-page.component';
+import { TeamsPlayersPageComponent } from './features/teams/teams-players-page.component';
+import { CourtsPageComponent } from './features/courts/courts-page.component';
+import { GroupsPageComponent } from './features/groups/groups-page.component';
+import { MatchesPageComponent } from './features/matches/matches-page.component';
+import { ScoreUpdatePageComponent } from './features/matches/score-update-page.component';
+import { StandingsPageComponent } from './features/standings/standings-page.component';
+import { BracketsPageComponent } from './features/brackets/brackets-page.component';
+import { CourtSchedulePageComponent } from './features/matches/court-schedule-page.component';
+
+export const routes: Routes = [
+  { path: '', component: DashboardPageComponent },
+  { path: 'tournaments', component: TournamentsPageComponent },
+  { path: 'tournaments/:id', component: TournamentDetailPageComponent },
+  { path: 'teams-players', component: TeamsPlayersPageComponent },
+  { path: 'courts', component: CourtsPageComponent },
+  { path: 'groups', component: GroupsPageComponent },
+  { path: 'matches', component: MatchesPageComponent },
+  { path: 'score-update', component: ScoreUpdatePageComponent },
+  { path: 'standings', component: StandingsPageComponent },
+  { path: 'brackets', component: BracketsPageComponent },
+  { path: 'court-schedule', component: CourtSchedulePageComponent },
+  { path: '**', redirectTo: '' },
+];

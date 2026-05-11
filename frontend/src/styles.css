@@ -1,0 +1,83 @@
+:root {
+  --bg: #f3f7f1;
+  --card: #ffffff;
+  --ink: #1f2a1d;
+  --accent: #0c7a6b;
+  --accent-2: #f4a259;
+  --muted: #5f6f5d;
+  --line: #d6e0d2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top right, #d7efe3, var(--bg) 42%);
+  color: var(--ink);
+}
+
+.page {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid.two {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+input,
+select,
+button,
+textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font: inherit;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--accent-2);
+  color: #222;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 720px) {
+  .page {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
