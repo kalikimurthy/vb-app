@@ -1,29 +1,135 @@
 :root {
-  --bg: #f3f7f1;
-  --card: #ffffff;
-  --ink: #1f2a1d;
-  --accent: #0c7a6b;
-  --accent-2: #f4a259;
-  --muted: #5f6f5d;
-  --line: #d6e0d2;
+  --bg: #111315;
+  --bg-soft: #15181b;
+  --card: #1a1d21;
+  --card-elevated: #20242a;
+  --surface: #252a31;
+  --ink: #f5f7fa;
+  --muted: #9ba3af;
+  --muted-strong: #c8ced7;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --accent: #8cfb5b;
+  --accent-strong: #66e043;
+  --warning: #f7b955;
+  --danger: #ff6b5f;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+}
+
 body {
   margin: 0;
-  font-family: "Source Sans 3", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top right, #d7efe3, var(--bg) 42%);
+  min-height: 100vh;
+  font-family: Inter, "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(140, 251, 91, 0.1), transparent 34rem),
+    linear-gradient(180deg, var(--bg-soft), var(--bg));
   color: var(--ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.68rem 0.78rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ink);
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(155, 163, 175, 0.76);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(140, 251, 91, 0.52);
+  box-shadow: 0 0 0 3px rgba(140, 251, 91, 0.1);
+}
+
+select option {
+  background: var(--card);
+  color: var(--ink);
+}
+
+button,
+.btn-primary {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.72rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #0c140d;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+button.secondary,
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+button:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  line-height: 1.1;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .page {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 1.25rem;
   padding: 1rem;
+  box-shadow: var(--shadow);
 }
 
 .grid {
@@ -35,27 +141,28 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
-input,
-select,
-button,
-textarea {
-  width: 100%;
-  padding: 0.6rem;
-  border-radius: 8px;
+.card,
+.panel {
+  background: var(--card);
   border: 1px solid var(--line);
-  font: inherit;
+  border-radius: 1.15rem;
+  box-shadow: var(--shadow);
 }
 
-button {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  cursor: pointer;
+.kicker {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-button.secondary {
-  background: var(--accent-2);
-  color: #222;
+.empty-state {
+  border: 1px dashed var(--line-strong);
+  border-radius: 1rem;
+  padding: 1rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 table {
@@ -66,8 +173,16 @@ table {
 th,
 td {
   text-align: left;
-  padding: 0.5rem;
+  padding: 0.72rem;
   border-bottom: 1px solid var(--line);
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .mobile-scroll {
@@ -76,8 +191,13 @@ td {
 
 @media (max-width: 720px) {
   .page {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    border-radius: 1rem;
+    padding: 0.85rem;
+  }
+
+  button,
+  .btn-primary,
+  .btn-secondary {
+    border-radius: 0.85rem;
   }
 }

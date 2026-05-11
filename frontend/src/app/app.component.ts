@@ -8,8 +8,22 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   template: `
     <main>
       <header class="topbar">
-        <h1>Volleyball Tournament Manager</h1>
-        <nav>
+        <div class="topbar-inner">
+          <div class="brand">
+            <span class="brand-mark">VB</span>
+            <div>
+              <p class="eyebrow">Tournament platform</p>
+              <h1>Volleyball Live</h1>
+            </div>
+          </div>
+
+          <div class="status-pill">
+            <span></span>
+            Admin
+          </div>
+        </div>
+
+        <nav aria-label="Primary navigation">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
           <a routerLink="/tournaments" routerLinkActive="active">Tournaments</a>
           <a routerLink="/teams-players" routerLinkActive="active">Teams/Players</a>
@@ -22,6 +36,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/court-schedule" routerLinkActive="active">Court Schedule</a>
         </nav>
       </header>
+
       <section class="container">
         <router-outlet></router-outlet>
       </section>
@@ -29,38 +44,140 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   `,
   styles: [
     `
+      main {
+        min-height: 100vh;
+      }
+
       .topbar {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: linear-gradient(120deg, #103c37, #125f5a);
-        color: white;
-        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(17, 19, 21, 0.92);
+        backdrop-filter: blur(18px);
       }
-      h1 {
-        margin: 0 0 0.5rem;
-        font-size: 1.15rem;
-        letter-spacing: 0.04em;
-      }
-      nav {
+
+      .topbar-inner {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        padding: 0.8rem 1rem 0.55rem;
         display: flex;
-        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.85rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: #0c140d;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.12rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--ink);
+        font-size: clamp(1rem, 2vw, 1.32rem);
+        font-weight: 900;
+        line-height: 1.1;
+      }
+
+      .status-pill {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(140, 251, 91, 0.25);
+        border-radius: 999px;
+        background: rgba(140, 251, 91, 0.08);
+        color: var(--accent);
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .status-pill span {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 14px rgba(140, 251, 91, 0.72);
+      }
+
+      nav {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        padding: 0 1rem 0.85rem;
+        display: flex;
         gap: 0.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
       }
+
+      nav::-webkit-scrollbar {
+        display: none;
+      }
+
       a {
-        color: #d7f2ea;
+        flex: 0 0 auto;
+        color: var(--muted);
         text-decoration: none;
-        padding: 0.3rem 0.5rem;
-        border-radius: 6px;
-        font-size: 0.9rem;
+        padding: 0.48rem 0.72rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.035);
+        font-size: 0.84rem;
+        font-weight: 800;
+        white-space: nowrap;
       }
+
       a.active,
       a:hover {
-        background: rgba(255, 255, 255, 0.18);
-        color: white;
+        border-color: rgba(140, 251, 91, 0.35);
+        background: rgba(140, 251, 91, 0.12);
+        color: var(--ink);
       }
+
       .container {
+        width: min(1180px, 100%);
+        margin: 0 auto;
         padding: 1rem;
+      }
+
+      @media (max-width: 720px) {
+        .topbar-inner {
+          padding-inline: 0.85rem;
+        }
+
+        nav {
+          padding-inline: 0.85rem;
+        }
+
+        .container {
+          padding: 0.85rem;
+        }
       }
     `,
   ],
