@@ -17,3 +17,5 @@ frontend/.npm-cache/
 .npm-cache/
 
 .npm-cache/
+
+backend/venv312/
