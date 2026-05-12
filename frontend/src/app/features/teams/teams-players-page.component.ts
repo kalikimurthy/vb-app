@@ -11,13 +11,11 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
   imports: [CommonModule, FormsModule],
   template: `
     <article class="teams-page">
-      <header class="page-hero">
+      <header class="page-hero roster-hero">
         <div>
-          <p class="kicker">Roster control</p>
+          <p class="kicker">Roster management</p>
           <h2>Teams & players</h2>
-          <p>
-            Build tournament rosters, assign players, and inspect each team like a matchday squad list.
-          </p>
+          <p>Pick a team, add players, and keep tournament rosters easy to scan.</p>
         </div>
         <div class="hero-stat">
           <strong>{{ teams.length }}</strong>
@@ -25,129 +23,145 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         </div>
       </header>
 
-      <div class="teams-layout">
+      <form class="panel create-team-card" (ngSubmit)="addTeam()">
+        <div>
+          <p class="kicker">Create team</p>
+          <h3>Add a roster</h3>
+        </div>
+
+        <select [(ngModel)]="teamForm.tournament" name="teamTournament">
+          <option [ngValue]="undefined">Tournament</option>
+          <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
+        </select>
+
+        <input [(ngModel)]="teamForm.name" name="teamName" placeholder="Team name" />
+
+        <button type="submit" [disabled]="isSavingTeam">
+          {{ isSavingTeam ? 'Adding...' : 'Add Team' }}
+        </button>
+
+        <p *ngIf="teamError" class="error">{{ teamError }}</p>
+      </form>
+
+      <div class="roster-layout">
         <section class="panel teams-panel">
-          <div class="panel-header">
+          <div class="section-heading">
             <div>
               <p class="kicker">Teams</p>
-              <h3>Create and select</h3>
+              <h3>Tournament rosters</h3>
             </div>
             <span>{{ players.length }} players</span>
           </div>
 
-          <form class="form-card" (ngSubmit)="addTeam()">
-            <select [(ngModel)]="teamForm.tournament" name="teamTournament">
-              <option [ngValue]="undefined">Tournament</option>
-              <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
-            </select>
-            <input [(ngModel)]="teamForm.name" name="teamName" placeholder="Team name" />
-            <button type="submit" [disabled]="isSavingTeam">
-              {{ isSavingTeam ? 'Adding...' : 'Add Team' }}
-            </button>
-            <p *ngIf="teamError" class="error">{{ teamError }}</p>
-            <p *ngIf="teamSuccess" class="success">{{ teamSuccess }}</p>
-          </form>
-
           <div class="team-list" *ngIf="teams.length; else noTeams">
             <button
               type="button"
-              class="team-card"
+              class="team-row"
               *ngFor="let team of teams"
               [class.selected]="selectedTeam?.id === team.id"
               (click)="selectTeam(team)"
             >
-              <span class="team-card-top">
+              <span class="team-main">
                 <strong>{{ team.name }}</strong>
-                <span>{{ getPlayersForTeam(team.id).length }}</span>
+                <small>{{ getTournamentName(team.tournament) }}</small>
               </span>
-              <span class="team-meta">{{ getTournamentName(team.tournament) }}</span>
+
+              <span class="team-side">
+                <span class="count-badge">{{ getPlayersForTeam(team.id).length }}</span>
+                <small>View roster</small>
+              </span>
             </button>
           </div>
 
           <ng-template #noTeams>
             <div class="empty-state">
-              Add your first team to start building the tournament roster.
+              Create a team above to start building rosters.
             </div>
           </ng-template>
         </section>
 
-        <section class="detail-stack">
-          <aside class="panel team-detail" *ngIf="selectedTeam; else noSelectedTeam">
-            <div class="detail-top">
-              <div>
-                <p class="kicker">Selected team</p>
-                <h3>{{ selectedTeam.name }}</h3>
-                <p>{{ getTournamentName(selectedTeam.tournament) }}</p>
-              </div>
-              <div class="player-count">
-                <strong>{{ getPlayersForTeam(selectedTeam.id).length }}</strong>
-                <span>Players</span>
-              </div>
-            </div>
-
-            <div class="players-list" *ngIf="getPlayersForTeam(selectedTeam.id).length; else noPlayers">
-              <div class="player-row" *ngFor="let player of getPlayersForTeam(selectedTeam.id); let i = index">
-                <span>{{ i + 1 }}</span>
-                <strong>{{ player.name }}</strong>
-              </div>
-            </div>
-          </aside>
-
-          <ng-template #noSelectedTeam>
-            <aside class="panel team-detail empty-detail">
+        <aside class="panel roster-panel" *ngIf="selectedTeam; else noSelectedTeam">
+          <div class="roster-top">
+            <div>
               <p class="kicker">Selected team</p>
-              <h3>No team selected</h3>
-              <p>Choose a team card to inspect assigned players.</p>
-            </aside>
-          </ng-template>
+              <h3>{{ selectedTeam.name }}</h3>
+              <p>{{ getTournamentName(selectedTeam.tournament) }}</p>
+            </div>
+
+            <div class="player-count">
+              <strong>{{ getPlayersForTeam(selectedTeam.id).length }}</strong>
+              <span>Players</span>
+            </div>
+          </div>
+
+          <div class="players-list" *ngIf="getPlayersForTeam(selectedTeam.id).length; else noPlayers">
+            <div class="player-row" *ngFor="let player of getPlayersForTeam(selectedTeam.id); let i = index">
+              <span>{{ i + 1 }}</span>
+              <strong>{{ player.name }}</strong>
+            </div>
+          </div>
 
           <ng-template #noPlayers>
-            <div class="empty-state">
-              No players assigned yet. Use the assignment card below to add players to this team.
-            </div>
+            <div class="empty-state compact-empty">No players yet.</div>
           </ng-template>
 
-          <section class="panel assignment-panel">
-            <div class="panel-header">
-              <div>
-                <p class="kicker">Players</p>
-                <h3>Add & assign</h3>
-              </div>
+          <form class="add-player-card" (ngSubmit)="addPlayerToSelectedTeam()">
+            <div>
+              <p class="kicker">Add player to this team</p>
+              <h4>New player</h4>
             </div>
 
-            <form class="form-card compact-form" (ngSubmit)="addPlayer()">
-              <input [(ngModel)]="playerForm.name" name="playerName" placeholder="Player name" />
+            <div class="inline-form">
+              <input
+                [(ngModel)]="newPlayerName"
+                name="newPlayerName"
+                placeholder="Player name"
+              />
               <button type="submit" [disabled]="isSavingPlayer">
                 {{ isSavingPlayer ? 'Adding...' : 'Add Player' }}
               </button>
-              <p *ngIf="playerError" class="error">{{ playerError }}</p>
-              <p *ngIf="playerSuccess" class="success">{{ playerSuccess }}</p>
-            </form>
+            </div>
 
-            <form class="form-card" (ngSubmit)="linkPlayer()">
-              <select [(ngModel)]="linkForm.team" name="linkTeam">
-                <option [ngValue]="undefined">Team</option>
-                <option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option>
-              </select>
+            <p *ngIf="playerError" class="error">{{ playerError }}</p>
+          </form>
 
-              <select [(ngModel)]="linkForm.player" name="linkPlayer">
-                <option [ngValue]="undefined">Player</option>
-                <option *ngFor="let p of players" [ngValue]="p.id">{{ p.name }}</option>
-              </select>
+          <section class="existing-player-card">
+            <button
+              type="button"
+              class="toggle-existing"
+              (click)="showExistingPlayerForm = !showExistingPlayerForm"
+            >
+              {{ showExistingPlayerForm ? 'Hide existing players' : 'Assign existing player' }}
+            </button>
 
-              <select [(ngModel)]="linkForm.tournament" name="linkTournament">
-                <option [ngValue]="undefined">Tournament</option>
-                <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
+            <form
+              *ngIf="showExistingPlayerForm"
+              class="existing-form"
+              (ngSubmit)="assignExistingPlayer()"
+            >
+              <select [(ngModel)]="existingPlayerId" name="existingPlayer">
+                <option [ngValue]="undefined">Existing player</option>
+                <option *ngFor="let p of unassignedPlayersForSelectedTeam()" [ngValue]="p.id">
+                  {{ p.name }}
+                </option>
               </select>
 
               <button type="submit" [disabled]="isAssigningPlayer">
-                {{ isAssigningPlayer ? 'Assigning...' : 'Assign to Team' }}
+                {{ isAssigningPlayer ? 'Assigning...' : 'Assign' }}
               </button>
-              <p *ngIf="assignmentError" class="error">{{ assignmentError }}</p>
-              <p *ngIf="assignmentSuccess" class="success">{{ assignmentSuccess }}</p>
             </form>
+
+            <p *ngIf="assignmentError" class="error">{{ assignmentError }}</p>
           </section>
-        </section>
+        </aside>
+
+        <ng-template #noSelectedTeam>
+          <aside class="panel roster-panel empty-detail">
+            <p class="kicker">Selected team</p>
+            <h3>Select a team first.</h3>
+            <p>Choose a team row to view and manage its roster.</p>
+          </aside>
+        </ng-template>
       </div>
     </article>
   `,
@@ -158,37 +172,17 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         gap: 1rem;
       }
 
-      .page-hero {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1rem;
-        border: 1px solid var(--line);
-        border-radius: 1.25rem;
-      }
-
-      .page-hero h2,
-      .page-hero p {
-        margin-bottom: 0;
-      }
-
-      .page-hero h2 {
+      .roster-hero h2 {
         margin-top: 0.25rem;
-        font-size: clamp(1.65rem, 4vw, 2.55rem);
-        letter-spacing: -0.03em;
-      }
-
-      .page-hero p:not(.kicker) {
-        max-width: 42rem;
+        font-size: clamp(1.65rem, 4vw, 2.45rem);
       }
 
       .hero-stat,
       .player-count {
-        min-width: 5.3rem;
-        padding: 0.78rem;
+        min-width: 5.25rem;
+        padding: 0.72rem;
         border: 1px solid rgba(20, 184, 166, 0.28);
-        border-radius: 1rem;
+        border-radius: 0.95rem;
         background: rgba(20, 184, 166, 0.1);
         text-align: center;
       }
@@ -197,133 +191,133 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
       .player-count strong {
         display: block;
         color: #99f6e4;
-        font-size: 1.55rem;
+        font-size: 1.5rem;
         line-height: 1;
       }
 
       .hero-stat span,
       .player-count span {
         color: var(--muted);
-        font-size: 0.75rem;
-        font-weight: 800;
+        font-size: 0.72rem;
+        font-weight: 900;
         text-transform: uppercase;
       }
 
-      .teams-layout {
+      .create-team-card {
+        display: grid;
+        gap: 0.75rem;
+        padding: 0.95rem;
+      }
+
+      .create-team-card h3,
+      .section-heading h3,
+      .roster-top h3 {
+        margin: 0.15rem 0 0;
+      }
+
+      .roster-layout {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 1rem;
       }
 
-      .panel {
-        padding: 1rem;
+      .teams-panel,
+      .roster-panel {
+        padding: 0.95rem;
       }
 
-      .panel-header,
-      .detail-top {
+      .section-heading,
+      .roster-top {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.9rem;
       }
 
-      .panel-header h3,
-      .detail-top h3 {
-        margin: 0.15rem 0 0;
-        font-size: 1.1rem;
-      }
-
-      .panel-header span {
+      .section-heading span {
         color: var(--muted);
         font-size: 0.82rem;
         font-weight: 800;
       }
 
-      .form-card {
+      .team-list,
+      .players-list {
         display: grid;
-        gap: 0.7rem;
+        gap: 0.55rem;
+      }
+
+      .team-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+        width: 100%;
         padding: 0.78rem;
         border: 1px solid var(--line);
-        border-radius: 1rem;
-        background: var(--card-elevated);
-        margin-bottom: 1rem;
-      }
-
-      .compact-form {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .team-list {
-        display: grid;
-        gap: 0.65rem;
-      }
-
-      .team-card {
-        width: 100%;
-        display: grid;
-        gap: 0.4rem;
-        padding: 0.82rem;
-        border: 1px solid var(--line);
-        border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.035);
+        border-radius: 0.95rem;
+        background: rgba(15, 23, 42, 0.38);
         color: var(--ink);
         text-align: left;
       }
 
-      .team-card:hover,
-      .team-card.selected {
-        border-color: rgba(37, 99, 235, 0.42);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(20, 184, 166, 0.08));
+      .team-row:hover,
+      .team-row.selected {
+        border-color: rgba(37, 99, 235, 0.45);
+        background: rgba(37, 99, 235, 0.13);
+        box-shadow: none;
       }
 
-      .team-card-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
+      .team-main {
+        min-width: 0;
+        display: grid;
+        gap: 0.18rem;
       }
 
-      .team-card-top strong {
+      .team-main strong {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 1rem;
+        font-size: 0.98rem;
       }
 
-      .team-card-top span {
+      .team-main small,
+      .team-side small {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 750;
+      }
+
+      .team-side {
+        flex: 0 0 auto;
+        display: grid;
+        justify-items: end;
+        gap: 0.24rem;
+      }
+
+      .count-badge {
         min-width: 2rem;
-        padding: 0.25rem 0.5rem;
+        padding: 0.22rem 0.5rem;
         border-radius: 999px;
-        background: var(--surface);
+        background: rgba(20, 184, 166, 0.14);
         color: #99f6e4;
         font-size: 0.78rem;
         font-weight: 900;
         text-align: center;
       }
 
-      .team-meta {
-        color: var(--muted);
-        font-size: 0.82rem;
-        font-weight: 700;
-      }
-
-      .detail-stack {
+      .roster-panel {
         display: grid;
-        gap: 1rem;
+        align-content: start;
+        gap: 0.9rem;
       }
 
-      .team-detail {
-        min-height: 15rem;
-      }
-
-      .detail-top p {
+      .roster-top {
         margin-bottom: 0;
       }
 
-      .players-list {
-        display: grid;
-        gap: 0.55rem;
+      .roster-top p {
+        margin-bottom: 0;
       }
 
       .player-row {
@@ -332,8 +326,8 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         gap: 0.7rem;
         padding: 0.68rem;
         border: 1px solid var(--line);
-        border-radius: 0.9rem;
-        background: rgba(255, 255, 255, 0.035);
+        border-radius: 0.85rem;
+        background: rgba(15, 23, 42, 0.42);
       }
 
       .player-row span {
@@ -341,9 +335,9 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         place-items: center;
         width: 1.8rem;
         height: 1.8rem;
-        border-radius: 0.7rem;
-        background: var(--surface);
-        color: var(--muted);
+        border-radius: 0.65rem;
+        background: rgba(37, 99, 235, 0.16);
+        color: #bfdbfe;
         font-weight: 900;
       }
 
@@ -351,35 +345,74 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         color: var(--ink);
       }
 
-      .empty-detail {
+      .compact-empty {
+        padding: 0.8rem;
+      }
+
+      .add-player-card,
+      .existing-player-card {
         display: grid;
+        gap: 0.7rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .add-player-card h4 {
+        margin: 0.15rem 0 0;
+        font-size: 0.98rem;
+      }
+
+      .inline-form,
+      .existing-form {
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      .toggle-existing {
+        width: auto;
+        justify-self: start;
+        min-height: 2.25rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--line);
+        background: rgba(148, 163, 184, 0.08);
+        color: var(--ink);
+        font-size: 0.84rem;
+      }
+
+      .empty-detail {
+        min-height: 14rem;
         align-content: center;
       }
 
       @media (min-width: 860px) {
-        .teams-layout {
-          grid-template-columns: minmax(20rem, 0.85fr) minmax(0, 1.15fr);
+        .create-team-card {
+          grid-template-columns: minmax(10rem, 0.75fr) minmax(12rem, 1fr) minmax(12rem, 1fr) auto;
+          align-items: end;
+        }
+
+        .create-team-card button {
+          width: auto;
+          min-width: 8.5rem;
+        }
+
+        .create-team-card .error {
+          grid-column: 1 / -1;
+        }
+
+        .roster-layout {
+          grid-template-columns: minmax(19rem, 0.9fr) minmax(0, 1.1fr);
           align-items: start;
         }
 
-        .compact-form {
+        .inline-form,
+        .existing-form {
           grid-template-columns: minmax(0, 1fr) auto;
         }
 
-        .compact-form button {
+        .inline-form button,
+        .existing-form button {
           width: auto;
-          min-width: 9rem;
-        }
-      }
-
-      @media (max-width: 720px) {
-        .page-hero {
-          align-items: flex-start;
-          flex-direction: column;
-        }
-
-        .hero-stat {
-          width: 100%;
+          min-width: 8.5rem;
         }
       }
     `,
@@ -395,15 +428,13 @@ export class TeamsPlayersPageComponent {
 
   selectedTeam?: Team;
   teamForm: Partial<Team> = { name: '', tournament: undefined };
-  playerForm: Player = { name: '' };
-  linkForm: Partial<TeamPlayer> = {};
+  newPlayerName = '';
+  existingPlayerId?: number;
+  showExistingPlayerForm = false;
 
   teamError = '';
   playerError = '';
   assignmentError = '';
-  teamSuccess = '';
-  playerSuccess = '';
-  assignmentSuccess = '';
   isSavingTeam = false;
   isSavingPlayer = false;
   isAssigningPlayer = false;
@@ -429,7 +460,6 @@ export class TeamsPlayersPageComponent {
 
   addTeam(): void {
     this.teamError = '';
-    this.teamSuccess = '';
 
     const name = this.teamForm.name?.trim();
     const tournament = this.teamForm.tournament;
@@ -446,16 +476,10 @@ export class TeamsPlayersPageComponent {
 
     this.isSavingTeam = true;
 
-    const payload: Team = {
-      tournament,
-      name,
-    };
-
-    this.api.create<Team>('teams', payload).subscribe({
+    this.api.create<Team>('teams', { tournament, name }).subscribe({
       next: () => {
         this.teamForm = { tournament, name: '' };
         this.isSavingTeam = false;
-        this.teamSuccess = 'Team created.';
         this.load();
       },
       error: (err) => {
@@ -465,11 +489,16 @@ export class TeamsPlayersPageComponent {
     });
   }
 
-  addPlayer(): void {
+  addPlayerToSelectedTeam(): void {
     this.playerError = '';
-    this.playerSuccess = '';
+    this.assignmentError = '';
 
-    const name = this.playerForm.name?.trim();
+    if (!this.selectedTeam?.id) {
+      this.playerError = 'Select a team first.';
+      return;
+    }
+
+    const name = this.newPlayerName.trim();
 
     if (!name) {
       this.playerError = 'Enter a player name.';
@@ -479,11 +508,24 @@ export class TeamsPlayersPageComponent {
     this.isSavingPlayer = true;
 
     this.api.create<Player>('players', { name }).subscribe({
-      next: () => {
-        this.playerForm = { name: '' };
-        this.isSavingPlayer = false;
-        this.playerSuccess = 'Player created.';
-        this.load();
+      next: (player) => {
+        if (!player.id) {
+          this.playerError = 'Player was created, but the API did not return an ID.';
+          this.isSavingPlayer = false;
+          return;
+        }
+
+        this.assignPlayerToSelectedTeam(player.id, {
+          onSuccess: () => {
+            this.newPlayerName = '';
+            this.isSavingPlayer = false;
+            this.reloadPlayersAndAssignments();
+          },
+          onError: (err) => {
+            this.playerError = this.formatApiError(err);
+            this.isSavingPlayer = false;
+          },
+        });
       },
       error: (err) => {
         this.playerError = this.formatApiError(err);
@@ -492,38 +534,28 @@ export class TeamsPlayersPageComponent {
     });
   }
 
-  linkPlayer(): void {
+  assignExistingPlayer(): void {
     this.assignmentError = '';
-    this.assignmentSuccess = '';
 
-    const team = this.linkForm.team;
-    const player = this.linkForm.player;
-    const tournament = this.linkForm.tournament;
-
-    if (!team) {
-      this.assignmentError = 'Select a team.';
+    if (!this.selectedTeam?.id) {
+      this.assignmentError = 'Select a team first.';
       return;
     }
 
-    if (!player) {
+    if (!this.existingPlayerId) {
       this.assignmentError = 'Select a player.';
-      return;
-    }
-
-    if (!tournament) {
-      this.assignmentError = 'Select a tournament.';
       return;
     }
 
     this.isAssigningPlayer = true;
 
-    this.api.create<TeamPlayer>('team-players', { team, player, tournament }).subscribe({
-      next: () => {
+    this.assignPlayerToSelectedTeam(this.existingPlayerId, {
+      onSuccess: () => {
+        this.existingPlayerId = undefined;
         this.isAssigningPlayer = false;
-        this.assignmentSuccess = 'Player assigned.';
-        this.loadTeamPlayers();
+        this.reloadPlayersAndAssignments();
       },
-      error: (err) => {
+      onError: (err) => {
         this.assignmentError = this.formatApiError(err);
         this.isAssigningPlayer = false;
       },
@@ -532,8 +564,9 @@ export class TeamsPlayersPageComponent {
 
   selectTeam(team: Team): void {
     this.selectedTeam = team;
-    this.linkForm.team = team.id;
-    this.linkForm.tournament = team.tournament;
+    this.playerError = '';
+    this.assignmentError = '';
+    this.existingPlayerId = undefined;
   }
 
   getTournamentName(tournamentId?: number): string {
@@ -569,6 +602,46 @@ export class TeamsPlayersPageComponent {
     return this.players.find((player) => player.id === playerId)?.name ?? `Player #${playerId}`;
   }
 
+  unassignedPlayersForSelectedTeam(): Player[] {
+    if (!this.selectedTeam?.id) {
+      return [];
+    }
+
+    const assignedIds = new Set(
+      this.getPlayersForTeam(this.selectedTeam.id)
+        .map((player) => player.id)
+        .filter((id): id is number => Boolean(id))
+    );
+
+    return this.players.filter((player) => player.id && !assignedIds.has(player.id));
+  }
+
+  private assignPlayerToSelectedTeam(
+    playerId: number,
+    handlers: { onSuccess: () => void; onError: (err: unknown) => void }
+  ): void {
+    if (!this.selectedTeam?.id) {
+      handlers.onError({ error: 'Select a team first.' });
+      return;
+    }
+
+    this.api
+      .create<TeamPlayer>('team-players', {
+        team: this.selectedTeam.id,
+        player: playerId,
+        tournament: this.selectedTeam.tournament,
+      })
+      .subscribe({
+        next: handlers.onSuccess,
+        error: handlers.onError,
+      });
+  }
+
+  private reloadPlayersAndAssignments(): void {
+    this.api.list<Player>('players').subscribe((r) => (this.players = r.results));
+    this.loadTeamPlayers();
+  }
+
   private loadTeamPlayers(): void {
     this.api.list<TeamPlayer>('team-players').subscribe({
       next: (r) => (this.teamPlayers = r.results),
@@ -589,6 +662,6 @@ export class TeamsPlayersPageComponent {
         .join(' | ');
     }
 
-    return 'Could not add team. Check that the backend is running and the tournament is valid.';
+    return 'Request failed. Check that the backend is running and the form is valid.';
   }
 }

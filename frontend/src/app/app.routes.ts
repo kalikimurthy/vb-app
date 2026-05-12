@@ -10,6 +10,8 @@ import { ScoreUpdatePageComponent } from './features/matches/score-update-page.c
 import { StandingsPageComponent } from './features/standings/standings-page.component';
 import { BracketsPageComponent } from './features/brackets/brackets-page.component';
 import { CourtSchedulePageComponent } from './features/matches/court-schedule-page.component';
+import { MatchScorePageComponent } from './features/matches/match-score-page.component';
+import { TournamentViewerPageComponent } from './features/viewer/tournament-viewer-page.component';
 
 export const routes: Routes = [
   { path: '', component: DashboardPageComponent },
@@ -19,9 +21,11 @@ export const routes: Routes = [
   { path: 'courts', component: CourtsPageComponent },
   { path: 'groups', component: GroupsPageComponent },
   { path: 'matches', component: MatchesPageComponent },
+  { path: 'matches/:matchId/score', component: MatchScorePageComponent },
   { path: 'score-update', component: ScoreUpdatePageComponent },
   { path: 'standings', component: StandingsPageComponent },
   { path: 'brackets', component: BracketsPageComponent },
   { path: 'court-schedule', component: CourtSchedulePageComponent },
+  { path: 'viewer/tournament/:id', component: TournamentViewerPageComponent },
   { path: '**', redirectTo: '' },
 ];

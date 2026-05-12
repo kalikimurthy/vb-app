@@ -58,6 +58,7 @@ export interface Match {
   pool_type: 'none' | 'premium' | 'star';
   manual_match: boolean;
   bracket_locked: boolean;
+  court_name?: string;
   scheduled_time?: string | null;
   status: 'Scheduled' | 'Live' | 'Completed';
   score_a: number;
