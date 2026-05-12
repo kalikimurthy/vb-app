@@ -13,7 +13,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             <span class="brand-mark">VB</span>
             <div>
               <p class="eyebrow">Tournament platform</p>
-              <h1>Volleyball Live</h1>
+              <h1>VB Tournament</h1>
             </div>
           </div>
 
@@ -24,7 +24,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         </div>
 
         <nav aria-label="Primary navigation">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/tournaments" routerLinkActive="active">Tournaments</a>
           <a routerLink="/teams-players" routerLinkActive="active">Teams/Players</a>
           <a routerLink="/courts" routerLinkActive="active">Courts</a>
@@ -53,7 +53,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         top: 0;
         z-index: 10;
         border-bottom: 1px solid var(--line);
-        background: rgba(17, 19, 21, 0.92);
+        background: rgba(15, 23, 42, 0.92);
         backdrop-filter: blur(18px);
       }
 
@@ -80,8 +80,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         width: 2.25rem;
         height: 2.25rem;
         border-radius: 0.85rem;
-        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-        color: #0c140d;
+        background: linear-gradient(135deg, var(--accent), var(--teal));
+        color: var(--ink);
         font-size: 0.82rem;
         font-weight: 950;
       }
@@ -110,10 +110,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         align-items: center;
         gap: 0.45rem;
         padding: 0.45rem 0.7rem;
-        border: 1px solid rgba(140, 251, 91, 0.25);
+        border: 1px solid rgba(20, 184, 166, 0.28);
         border-radius: 999px;
-        background: rgba(140, 251, 91, 0.08);
-        color: var(--accent);
+        background: rgba(20, 184, 166, 0.1);
+        color: #99f6e4;
         font-size: 0.76rem;
         font-weight: 900;
       }
@@ -122,8 +122,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         width: 0.45rem;
         height: 0.45rem;
         border-radius: 999px;
-        background: var(--accent);
-        box-shadow: 0 0 14px rgba(140, 251, 91, 0.72);
+        background: var(--teal);
+        box-shadow: 0 0 14px rgba(20, 184, 166, 0.72);
       }
 
       nav {
@@ -147,7 +147,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         padding: 0.48rem 0.72rem;
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.035);
+        background: rgba(30, 41, 59, 0.68);
         font-size: 0.84rem;
         font-weight: 800;
         white-space: nowrap;
@@ -155,9 +155,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
       a.active,
       a:hover {
-        border-color: rgba(140, 251, 91, 0.35);
-        background: rgba(140, 251, 91, 0.12);
+        border-color: rgba(20, 184, 166, 0.42);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(20, 184, 166, 0.14));
         color: var(--ink);
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
       }
 
       .container {

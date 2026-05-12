@@ -45,6 +45,7 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
               {{ isSavingTeam ? 'Adding...' : 'Add Team' }}
             </button>
             <p *ngIf="teamError" class="error">{{ teamError }}</p>
+            <p *ngIf="teamSuccess" class="success">{{ teamSuccess }}</p>
           </form>
 
           <div class="team-list" *ngIf="teams.length; else noTeams">
@@ -116,7 +117,11 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
 
             <form class="form-card compact-form" (ngSubmit)="addPlayer()">
               <input [(ngModel)]="playerForm.name" name="playerName" placeholder="Player name" />
-              <button type="submit">Add Player</button>
+              <button type="submit" [disabled]="isSavingPlayer">
+                {{ isSavingPlayer ? 'Adding...' : 'Add Player' }}
+              </button>
+              <p *ngIf="playerError" class="error">{{ playerError }}</p>
+              <p *ngIf="playerSuccess" class="success">{{ playerSuccess }}</p>
             </form>
 
             <form class="form-card" (ngSubmit)="linkPlayer()">
@@ -135,7 +140,11 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
                 <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
               </select>
 
-              <button type="submit">Assign to Team</button>
+              <button type="submit" [disabled]="isAssigningPlayer">
+                {{ isAssigningPlayer ? 'Assigning...' : 'Assign to Team' }}
+              </button>
+              <p *ngIf="assignmentError" class="error">{{ assignmentError }}</p>
+              <p *ngIf="assignmentSuccess" class="success">{{ assignmentSuccess }}</p>
             </form>
           </section>
         </section>
@@ -157,10 +166,6 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         padding: 1rem;
         border: 1px solid var(--line);
         border-radius: 1.25rem;
-        background:
-          linear-gradient(135deg, rgba(140, 251, 91, 0.1), transparent 42%),
-          var(--card);
-        box-shadow: var(--shadow);
       }
 
       .page-hero h2,
@@ -182,16 +187,16 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
       .player-count {
         min-width: 5.3rem;
         padding: 0.78rem;
-        border: 1px solid rgba(140, 251, 91, 0.24);
+        border: 1px solid rgba(20, 184, 166, 0.28);
         border-radius: 1rem;
-        background: rgba(140, 251, 91, 0.08);
+        background: rgba(20, 184, 166, 0.1);
         text-align: center;
       }
 
       .hero-stat strong,
       .player-count strong {
         display: block;
-        color: var(--accent);
+        color: #99f6e4;
         font-size: 1.55rem;
         line-height: 1;
       }
@@ -268,8 +273,8 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
 
       .team-card:hover,
       .team-card.selected {
-        border-color: rgba(140, 251, 91, 0.42);
-        background: rgba(140, 251, 91, 0.1);
+        border-color: rgba(37, 99, 235, 0.42);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(20, 184, 166, 0.08));
       }
 
       .team-card-top {
@@ -291,7 +296,7 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
         padding: 0.25rem 0.5rem;
         border-radius: 999px;
         background: var(--surface);
-        color: var(--accent);
+        color: #99f6e4;
         font-size: 0.78rem;
         font-weight: 900;
         text-align: center;
@@ -394,7 +399,14 @@ export class TeamsPlayersPageComponent {
   linkForm: Partial<TeamPlayer> = {};
 
   teamError = '';
+  playerError = '';
+  assignmentError = '';
+  teamSuccess = '';
+  playerSuccess = '';
+  assignmentSuccess = '';
   isSavingTeam = false;
+  isSavingPlayer = false;
+  isAssigningPlayer = false;
 
   constructor() {
     this.load();
@@ -403,7 +415,7 @@ export class TeamsPlayersPageComponent {
   load(): void {
     this.api.list<Tournament>('tournaments').subscribe((r) => (this.tournaments = r.results));
     this.api.list<Player>('players').subscribe((r) => (this.players = r.results));
-    this.api.list<TeamPlayer>('team-players').subscribe((r) => (this.teamPlayers = r.results));
+    this.loadTeamPlayers();
     this.api.list<Team>('teams').subscribe((r) => {
       const selectedId = this.selectedTeam?.id;
       this.teams = r.results;
@@ -417,6 +429,7 @@ export class TeamsPlayersPageComponent {
 
   addTeam(): void {
     this.teamError = '';
+    this.teamSuccess = '';
 
     const name = this.teamForm.name?.trim();
     const tournament = this.teamForm.tournament;
@@ -442,6 +455,7 @@ export class TeamsPlayersPageComponent {
       next: () => {
         this.teamForm = { tournament, name: '' };
         this.isSavingTeam = false;
+        this.teamSuccess = 'Team created.';
         this.load();
       },
       error: (err) => {
@@ -452,19 +466,67 @@ export class TeamsPlayersPageComponent {
   }
 
   addPlayer(): void {
-    if (!this.playerForm.name?.trim()) {
+    this.playerError = '';
+    this.playerSuccess = '';
+
+    const name = this.playerForm.name?.trim();
+
+    if (!name) {
+      this.playerError = 'Enter a player name.';
       return;
     }
 
-    this.api.create<Player>('players', this.playerForm).subscribe(() => {
-      this.playerForm = { name: '' };
-      this.load();
+    this.isSavingPlayer = true;
+
+    this.api.create<Player>('players', { name }).subscribe({
+      next: () => {
+        this.playerForm = { name: '' };
+        this.isSavingPlayer = false;
+        this.playerSuccess = 'Player created.';
+        this.load();
+      },
+      error: (err) => {
+        this.playerError = this.formatApiError(err);
+        this.isSavingPlayer = false;
+      },
     });
   }
 
   linkPlayer(): void {
-    this.api.create<TeamPlayer>('team-players', this.linkForm).subscribe(() => {
-      this.api.list<TeamPlayer>('team-players').subscribe((r) => (this.teamPlayers = r.results));
+    this.assignmentError = '';
+    this.assignmentSuccess = '';
+
+    const team = this.linkForm.team;
+    const player = this.linkForm.player;
+    const tournament = this.linkForm.tournament;
+
+    if (!team) {
+      this.assignmentError = 'Select a team.';
+      return;
+    }
+
+    if (!player) {
+      this.assignmentError = 'Select a player.';
+      return;
+    }
+
+    if (!tournament) {
+      this.assignmentError = 'Select a tournament.';
+      return;
+    }
+
+    this.isAssigningPlayer = true;
+
+    this.api.create<TeamPlayer>('team-players', { team, player, tournament }).subscribe({
+      next: () => {
+        this.isAssigningPlayer = false;
+        this.assignmentSuccess = 'Player assigned.';
+        this.loadTeamPlayers();
+      },
+      error: (err) => {
+        this.assignmentError = this.formatApiError(err);
+        this.isAssigningPlayer = false;
+      },
     });
   }
 
@@ -505,6 +567,13 @@ export class TeamsPlayersPageComponent {
     }
 
     return this.players.find((player) => player.id === playerId)?.name ?? `Player #${playerId}`;
+  }
+
+  private loadTeamPlayers(): void {
+    this.api.list<TeamPlayer>('team-players').subscribe({
+      next: (r) => (this.teamPlayers = r.results),
+      error: (err) => (this.assignmentError = this.formatApiError(err)),
+    });
   }
 
   private formatApiError(err: unknown): string {
