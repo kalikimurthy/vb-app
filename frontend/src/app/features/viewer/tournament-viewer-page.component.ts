@@ -38,6 +38,9 @@ import {
         <button type="button" [class.active]="activeTab === 'matches'" (click)="activeTab = 'matches'">
           Matches
         </button>
+        <button type="button" [class.active]="activeTab === 'groups'" (click)="activeTab = 'groups'">
+          Groups
+        </button>
         <button type="button" [class.active]="activeTab === 'standings'" (click)="activeTab = 'standings'">
           Standings
         </button>
@@ -77,6 +80,79 @@ import {
           </div>
           <ng-template #noCompleted>
             <div class="empty-state">No completed matches yet.</div>
+          </ng-template>
+        </section>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab === 'groups'">
+        <section class="groups-section">
+          <div class="section-title">
+            <div>
+              <p class="kicker">Pool projections</p>
+              <h3>Groups</h3>
+              <p>Groups update from pool results. Division projection is based on overall pool-stage ranking.</p>
+            </div>
+            <span>{{ groups.length }} Groups</span>
+          </div>
+
+          <div class="projection-legend" aria-label="Division projection legend">
+            <span class="legend-item champions">Champions League: Overall ranks 1-8</span>
+            <span class="legend-item premier">Premier League: Overall ranks 9-16</span>
+            <span class="legend-item eliminated">Eliminated: Overall ranks 17-20</span>
+            <span class="legend-item pending">Pending: standings incomplete</span>
+          </div>
+
+          <div class="groups-grid" *ngIf="groups.length; else noGroups">
+            <article class="group-projection-card" *ngFor="let group of groups">
+              <div class="group-card-top">
+                <div>
+                  <p class="kicker">Pool</p>
+                  <h4>{{ group.name }}</h4>
+                </div>
+                <span>{{ getTeamsForGroup(group.id).length }} Teams</span>
+              </div>
+
+              <div class="group-team-list" *ngIf="getTeamsForGroup(group.id).length; else emptyGroup">
+                <div
+                  class="group-team-row"
+                  *ngFor="let team of getTeamsForGroup(group.id)"
+                  [ngClass]="getProjectionClass(team.id)"
+                >
+                  <div class="team-row-main">
+                    <strong>{{ team.name }}</strong>
+                    <span class="projection-badge">{{ getProjectionForTeam(team.id) }}</span>
+                  </div>
+
+                  <div class="team-row-stats" *ngIf="getStandingForTeam(team.id) as standing; else pendingStats">
+                    <span>#{{ standing.rank }} Overall</span>
+                    <span>{{ standing.wins }}-{{ standing.losses }}</span>
+                    <span>PF {{ standing.points_scored }}</span>
+                    <span>PA {{ standing.points_given }}</span>
+                    <span>Diff {{ getPointDifferential(standing) }}</span>
+                    <span>Rating {{ standing.net_run_rate }}</span>
+                  </div>
+
+                  <ng-template #pendingStats>
+                    <div class="team-row-stats">
+                      <span>Rank pending</span>
+                      <span>0-0</span>
+                      <span>PF 0</span>
+                      <span>PA 0</span>
+                      <span>Diff 0</span>
+                      <span>Rating 0</span>
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+
+              <ng-template #emptyGroup>
+                <div class="empty-state">Teams will appear when this group is assigned.</div>
+              </ng-template>
+            </article>
+          </div>
+
+          <ng-template #noGroups>
+            <div class="empty-state">Groups will appear once tournament setup is available.</div>
           </ng-template>
         </section>
       </ng-container>
@@ -427,7 +503,7 @@ import {
 
       .viewer-tabs {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.5rem;
         padding: 0.35rem;
         border: 1px solid var(--line);
@@ -461,9 +537,168 @@ import {
         font-size: 1rem;
       }
 
-      .standings-section {
+      .standings-section,
+      .groups-section {
         display: grid;
         gap: 0.75rem;
+      }
+
+      .projection-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        min-width: 0;
+      }
+
+      .legend-item {
+        max-width: 100%;
+        padding: 0.38rem 0.58rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.48);
+        color: var(--muted-strong);
+        font-size: 0.74rem;
+        font-weight: 850;
+      }
+
+      .legend-item.champions {
+        border-color: rgba(20, 184, 166, 0.34);
+        color: #99f6e4;
+      }
+
+      .legend-item.premier {
+        border-color: rgba(37, 99, 235, 0.34);
+        color: #bfdbfe;
+      }
+
+      .legend-item.eliminated {
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #fecaca;
+      }
+
+      .groups-grid {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .group-projection-card {
+        display: grid;
+        gap: 0.72rem;
+        min-width: 0;
+        padding: 0.88rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(30, 41, 59, 0.86);
+      }
+
+      .group-card-top,
+      .team-row-main {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .group-card-top h4 {
+        margin: 0.12rem 0 0;
+        color: var(--ink);
+        font-size: 1rem;
+      }
+
+      .group-card-top > span {
+        flex: 0 0 auto;
+        padding: 0.3rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.5);
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .group-team-list {
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .group-team-row {
+        display: grid;
+        gap: 0.5rem;
+        min-width: 0;
+        padding: 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        background: rgba(15, 23, 42, 0.44);
+        box-shadow: inset 3px 0 0 rgba(148, 163, 184, 0.24);
+      }
+
+      .group-team-row.champions {
+        border-color: rgba(20, 184, 166, 0.3);
+        box-shadow: inset 3px 0 0 rgba(20, 184, 166, 0.82);
+      }
+
+      .group-team-row.premier {
+        border-color: rgba(37, 99, 235, 0.28);
+        box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.82);
+      }
+
+      .group-team-row.eliminated {
+        border-color: rgba(239, 68, 68, 0.26);
+        box-shadow: inset 3px 0 0 rgba(239, 68, 68, 0.68);
+        opacity: 0.82;
+      }
+
+      .team-row-main strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 0.92rem;
+      }
+
+      .projection-badge {
+        flex: 0 0 auto;
+        max-width: 9rem;
+        padding: 0.28rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--muted-strong);
+        font-size: 0.66rem;
+        font-weight: 950;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .champions .projection-badge {
+        background: rgba(20, 184, 166, 0.14);
+        color: #99f6e4;
+      }
+
+      .premier .projection-badge {
+        background: rgba(37, 99, 235, 0.16);
+        color: #bfdbfe;
+      }
+
+      .eliminated .projection-badge {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fecaca;
+      }
+
+      .team-row-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        min-width: 0;
+      }
+
+      .team-row-stats span {
+        padding: 0.25rem 0.42rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.5);
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 850;
       }
 
       .bracket-section,
@@ -1031,6 +1266,10 @@ import {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .groups-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .standing-card {
           grid-template-columns: auto minmax(12rem, 1fr) minmax(22rem, 1.7fr);
           align-items: center;
@@ -1102,7 +1341,7 @@ import {
 
         .viewer-tabs {
           gap: 0.35rem;
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .viewer-tabs button,
@@ -1131,13 +1370,13 @@ export class TournamentViewerPageComponent implements OnDestroy {
   matches: Match[] = [];
   standings: Standing[] = [];
   viewerError = '';
-  activeTab: 'matches' | 'standings' | 'brackets' = 'matches';
+  activeTab: 'matches' | 'groups' | 'standings' | 'brackets' = 'matches';
   selectedBracket: PublicBracketKey = 'champions';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab');
-    if (requestedTab === 'standings' || requestedTab === 'brackets') {
+    if (requestedTab === 'groups' || requestedTab === 'standings' || requestedTab === 'brackets') {
       this.activeTab = requestedTab;
     }
 
@@ -1183,6 +1422,66 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   get activeBracketProjection(): BracketProjection {
     return this.progression.brackets[this.selectedBracket];
+  }
+
+  getTeamsForGroup(groupId?: number): Team[] {
+    if (!groupId) {
+      return [];
+    }
+
+    const teamIds = new Set(
+      this.groupTeams
+        .filter((link) => link.group === groupId)
+        .map((link) => link.team)
+    );
+
+    return this.teams.filter((team) => team.id && teamIds.has(team.id));
+  }
+
+  getStandingForTeam(teamId?: number): Standing | undefined {
+    if (!teamId) {
+      return undefined;
+    }
+
+    return this.standings.find((standing) => standing.team === teamId && !standing.pool_type);
+  }
+
+  getProjectionForTeam(teamId?: number): string {
+    const projectionClass = this.getProjectionClass(teamId);
+    if (projectionClass === 'champions') {
+      return 'Champions League';
+    }
+
+    if (projectionClass === 'premier') {
+      return 'Premier League';
+    }
+
+    if (projectionClass === 'eliminated') {
+      return 'Eliminated';
+    }
+
+    return 'Pending';
+  }
+
+  getProjectionClass(teamId?: number): 'champions' | 'premier' | 'eliminated' | 'pending' {
+    if (!teamId) {
+      return 'pending';
+    }
+
+    const progression = this.progression;
+    if (progression.brackets.champions.seeds.some((team) => team.teamId === teamId)) {
+      return 'champions';
+    }
+
+    if (progression.brackets.premier.seeds.some((team) => team.teamId === teamId)) {
+      return 'premier';
+    }
+
+    if (progression.eliminated.some((team) => team.teamId === teamId)) {
+      return 'eliminated';
+    }
+
+    return 'pending';
   }
 
   loadReferenceData(): void {
