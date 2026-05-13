@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <main>
       <header class="topbar">
@@ -17,13 +19,19 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             </div>
           </div>
 
-          <div class="status-pill">
+          <div class="status-pill" *ngIf="!isViewerRoute; else publicStatus">
             <span></span>
             Admin
           </div>
+          <ng-template #publicStatus>
+            <div class="status-pill public">
+              <span></span>
+              Read-only
+            </div>
+          </ng-template>
         </div>
 
-        <nav aria-label="Primary navigation">
+        <nav *ngIf="!isViewerRoute" aria-label="Primary navigation">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/tournaments" routerLinkActive="active">Tournaments</a>
           <a routerLink="/teams-players" routerLinkActive="active">Teams/Players</a>
@@ -127,6 +135,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         box-shadow: 0 0 14px rgba(20, 184, 166, 0.72);
       }
 
+      .status-pill.public {
+        border-color: rgba(37, 99, 235, 0.34);
+        background: rgba(37, 99, 235, 0.14);
+        color: #bfdbfe;
+      }
+
       nav {
         box-sizing: border-box;
         width: min(1180px, 100%);
@@ -187,4 +201,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     `,
   ],
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor(private router: Router) {}
+
+  get isViewerRoute(): boolean {
+    return this.router.url.startsWith('/viewer/');
+  }
+}

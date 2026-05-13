@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { Court, Group, Match, Team, Tournament } from '../../core/models';
+import { Court, Group, Match, Standing, Team, Tournament } from '../../core/models';
 import {
   formatMatchTime,
   getCourtName,
@@ -19,45 +19,98 @@ import {
     <article class="viewer-page" *ngIf="tournament; else loading">
       <header class="page-hero viewer-hero">
         <div>
-          <p class="kicker">Public scoreboard</p>
+          <p class="kicker">Public Viewer</p>
           <h2>{{ tournament.name }}</h2>
           <p>{{ tournament.date }} - {{ tournament.format }}</p>
         </div>
-        <div class="status-pill">{{ tournament.status || 'Draft' }}</div>
+        <div class="viewer-status">
+          <span class="status-pill">{{ tournament.status || 'Draft' }}</span>
+          <span class="read-only-pill">Read-only</span>
+        </div>
       </header>
 
-      <section class="match-section" *ngIf="liveMatches.length">
-        <h3>Live now</h3>
-        <div class="match-grid">
-          <ng-container *ngFor="let match of liveMatches">
-            <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-          </ng-container>
-        </div>
+      <section class="viewer-tabs" aria-label="Public viewer sections">
+        <button type="button" [class.active]="activeTab === 'matches'" (click)="activeTab = 'matches'">
+          Matches
+        </button>
+        <button type="button" [class.active]="activeTab === 'standings'" (click)="activeTab = 'standings'">
+          Standings
+        </button>
       </section>
 
-      <section class="match-section">
-        <h3>Upcoming</h3>
-        <div class="match-grid" *ngIf="scheduledMatches.length; else noUpcoming">
-          <ng-container *ngFor="let match of scheduledMatches">
-            <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-          </ng-container>
-        </div>
-        <ng-template #noUpcoming>
-          <div class="empty-state">No scheduled matches.</div>
-        </ng-template>
-      </section>
+      <ng-container *ngIf="activeTab === 'matches'; else standingsTab">
+        <section class="match-section" *ngIf="liveMatches.length">
+          <h3>Live now</h3>
+          <div class="match-grid">
+            <ng-container *ngFor="let match of liveMatches">
+              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
+            </ng-container>
+          </div>
+        </section>
 
-      <section class="match-section">
-        <h3>Completed</h3>
-        <div class="match-grid" *ngIf="completedMatches.length; else noCompleted">
-          <ng-container *ngFor="let match of completedMatches">
-            <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-          </ng-container>
-        </div>
-        <ng-template #noCompleted>
-          <div class="empty-state">No completed matches yet.</div>
-        </ng-template>
-      </section>
+        <section class="match-section">
+          <h3>Upcoming</h3>
+          <div class="match-grid" *ngIf="scheduledMatches.length; else noUpcoming">
+            <ng-container *ngFor="let match of scheduledMatches">
+              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
+            </ng-container>
+          </div>
+          <ng-template #noUpcoming>
+            <div class="empty-state">No scheduled matches.</div>
+          </ng-template>
+        </section>
+
+        <section class="match-section">
+          <h3>Completed</h3>
+          <div class="match-grid" *ngIf="completedMatches.length; else noCompleted">
+            <ng-container *ngFor="let match of completedMatches">
+              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
+            </ng-container>
+          </div>
+          <ng-template #noCompleted>
+            <div class="empty-state">No completed matches yet.</div>
+          </ng-template>
+        </section>
+      </ng-container>
+
+      <ng-template #standingsTab>
+        <section class="standings-section">
+          <div class="section-title">
+            <div>
+              <p class="kicker">Read-only standings</p>
+              <h3>Tournament table</h3>
+            </div>
+            <span>{{ standings.length }} Teams</span>
+          </div>
+
+          <div class="standings-list" *ngIf="standings.length; else noStandings">
+            <article class="standing-card" *ngFor="let standing of standings">
+              <div class="rank-block">
+                <strong>{{ standing.rank }}</strong>
+                <span>Rank</span>
+              </div>
+
+              <div class="standing-main">
+                <strong>{{ getStandingTeamName(standing) }}</strong>
+                <small *ngIf="getPoolLabel(standing)">{{ getPoolLabel(standing) }}</small>
+              </div>
+
+              <div class="standing-stats">
+                <span><strong>{{ standing.wins }}</strong> W</span>
+                <span><strong>{{ standing.losses }}</strong> L</span>
+                <span><strong>{{ standing.points_scored }}</strong> PF</span>
+                <span><strong>{{ standing.points_given }}</strong> PA</span>
+                <span><strong>{{ getPointDifferential(standing) }}</strong> Diff</span>
+                <span><strong>{{ standing.net_run_rate }}</strong> Rating</span>
+              </div>
+            </article>
+          </div>
+
+          <ng-template #noStandings>
+            <div class="empty-state">Standings will appear after completed matches are recorded.</div>
+          </ng-template>
+        </section>
+      </ng-template>
 
       <ng-template #matchCard let-match>
         <article class="viewer-card" [class.live]="match.status === 'Live'" [class.completed]="match.status === 'Completed'">
@@ -98,6 +151,48 @@ import {
         font-size: clamp(1.55rem, 4vw, 2.5rem);
       }
 
+      .viewer-status {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .read-only-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(20, 184, 166, 0.3);
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.1);
+        color: #99f6e4;
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .viewer-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        padding: 0.35rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      .viewer-tabs button {
+        min-height: 2.55rem;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      .viewer-tabs button.active {
+        border-color: rgba(20, 184, 166, 0.36);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.34), rgba(20, 184, 166, 0.22));
+        color: var(--ink);
+      }
+
       .match-section {
         display: grid;
         gap: 0.7rem;
@@ -107,6 +202,104 @@ import {
         margin: 0;
         color: var(--ink);
         font-size: 1rem;
+      }
+
+      .standings-section {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .section-title h3 {
+        margin: 0.12rem 0 0;
+      }
+
+      .section-title span {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+
+      .standings-list {
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      .standing-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.75rem;
+        padding: 0.85rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(30, 41, 59, 0.88);
+      }
+
+      .rank-block {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        width: 3rem;
+        min-height: 3rem;
+        border-radius: 0.85rem;
+        background: rgba(37, 99, 235, 0.18);
+      }
+
+      .rank-block strong {
+        color: var(--ink);
+        font-size: 1.25rem;
+        line-height: 1;
+      }
+
+      .rank-block span,
+      .standing-main small {
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .standing-main {
+        min-width: 0;
+        display: grid;
+        gap: 0.25rem;
+      }
+
+      .standing-main > strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+      }
+
+      .standing-stats {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.45rem;
+      }
+
+      .standing-stats span {
+        min-width: 0;
+        padding: 0.45rem 0.5rem;
+        border-radius: 0.75rem;
+        background: rgba(15, 23, 42, 0.48);
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 850;
+        text-align: center;
+      }
+
+      .standing-stats strong {
+        display: block;
+        color: var(--ink);
+        font-size: 0.95rem;
       }
 
       .match-grid {
@@ -187,6 +380,16 @@ import {
         .match-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .standing-card {
+          grid-template-columns: auto minmax(12rem, 1fr) minmax(22rem, 1.7fr);
+          align-items: center;
+        }
+
+        .standing-stats {
+          grid-column: auto;
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
       }
     `,
   ],
@@ -201,13 +404,23 @@ export class TournamentViewerPageComponent implements OnDestroy {
   courts: Court[] = [];
   groups: Group[] = [];
   matches: Match[] = [];
+  standings: Standing[] = [];
+  activeTab: 'matches' | 'standings' = 'matches';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
+    if (this.route.snapshot.queryParamMap.get('tab') === 'standings') {
+      this.activeTab = 'standings';
+    }
+
     this.loadReferenceData();
     this.loadTournament();
     this.loadMatches();
-    this.timer = setInterval(() => this.loadMatches(), 10000);
+    this.loadStandings();
+    this.timer = setInterval(() => {
+      this.loadMatches();
+      this.loadStandings();
+    }, 10000);
   }
 
   ngOnDestroy(): void {
@@ -244,6 +457,12 @@ export class TournamentViewerPageComponent implements OnDestroy {
       .subscribe((r) => (this.matches = r.results));
   }
 
+  loadStandings(): void {
+    this.api
+      .list<Standing>('standings', { tournament: this.tournamentId, ordering: 'rank' })
+      .subscribe((r) => (this.standings = r.results));
+  }
+
   getTeamName(id?: number | null): string {
     return getTeamName(this.teams, id);
   }
@@ -258,5 +477,21 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
+  }
+
+  getStandingTeamName(standing: Standing): string {
+    return standing.team_name || getTeamName(this.teams, standing.team);
+  }
+
+  getPointDifferential(standing: Standing): number {
+    return standing.points_scored - standing.points_given;
+  }
+
+  getPoolLabel(standing: Standing): string {
+    if (!standing.pool_type) {
+      return '';
+    }
+
+    return `${standing.pool_type.charAt(0).toUpperCase()}${standing.pool_type.slice(1)} pool`;
   }
 }
