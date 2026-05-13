@@ -7,6 +7,14 @@ export interface ProgressionRule {
   name: string;
   qualifyingRanks: number[];
   description: string;
+  bracketSize: number;
+  matchupPattern: number[][];
+  semifinalPattern: { label: string; sourceMatchups: number[] }[];
+  projectionStrategy: 'better-seed';
+  matchFormat: {
+    sets: number;
+    label: string;
+  };
 }
 
 export interface SeededProjectionTeam {
@@ -28,12 +36,29 @@ export interface ProjectedMatchup {
   label: string;
   top?: SeededProjectionTeam;
   bottom?: SeededProjectionTeam;
+  projectedWinner?: SeededProjectionTeam;
+}
+
+export interface ProjectedRoundMatch {
+  label: string;
+  matchupLabel?: string;
+  top?: SeededProjectionTeam;
+  bottom?: SeededProjectionTeam;
+  projectedWinner?: SeededProjectionTeam;
+}
+
+export interface ProjectedBracketRounds {
+  quarterfinals: ProjectedRoundMatch[];
+  semifinals: ProjectedRoundMatch[];
+  final?: ProjectedRoundMatch;
+  champion?: SeededProjectionTeam;
 }
 
 export interface BracketProjection {
   rule: ProgressionRule;
   seeds: SeededProjectionTeam[];
   matchups: ProjectedMatchup[];
+  projectedRounds: ProjectedBracketRounds;
   isComplete: boolean;
 }
 
@@ -43,25 +68,51 @@ export interface ProgressionProjection {
 }
 
 export const PUBLIC_PROGRESSION_CONFIG = {
-  bracketSize: 8,
-  matchupPattern: [
-    [1, 8],
-    [2, 7],
-    [3, 6],
-    [4, 5],
-  ],
+  // Future dynamic rules/PDF parsing can hydrate this shape from admin-created format data.
   brackets: [
     {
       key: 'premier',
       name: 'Premier',
       qualifyingRanks: [1, 2],
       description: '1st-2nd from each group',
+      bracketSize: 8,
+      matchupPattern: [
+        [1, 8],
+        [2, 7],
+        [3, 6],
+        [4, 5],
+      ],
+      semifinalPattern: [
+        { label: 'SF1', sourceMatchups: [0, 3] },
+        { label: 'SF2', sourceMatchups: [1, 2] },
+      ],
+      projectionStrategy: 'better-seed',
+      matchFormat: {
+        sets: 1,
+        label: 'Projected single-match knockout',
+      },
     },
     {
       key: 'star',
       name: 'Star',
       qualifyingRanks: [3, 4],
       description: '3rd-4th from each group',
+      bracketSize: 8,
+      matchupPattern: [
+        [1, 8],
+        [2, 7],
+        [3, 6],
+        [4, 5],
+      ],
+      semifinalPattern: [
+        { label: 'SF1', sourceMatchups: [0, 3] },
+        { label: 'SF2', sourceMatchups: [1, 2] },
+      ],
+      projectionStrategy: 'better-seed',
+      matchFormat: {
+        sets: 1,
+        label: 'Projected single-match knockout',
+      },
     },
   ] satisfies ProgressionRule[],
   eliminatedRank: 5,
@@ -79,14 +130,17 @@ export function buildProgressionProjection(
   const brackets = PUBLIC_PROGRESSION_CONFIG.brackets.reduce(
     (accumulator, rule) => {
       const seeds = seedBracket(
-        allRankedTeams.filter((team) => rule.qualifyingRanks.includes(team.groupRank))
+        allRankedTeams.filter((team) => rule.qualifyingRanks.includes(team.groupRank)),
+        rule
       );
+      const matchups = buildMatchups(seeds, rule);
 
       accumulator[rule.key] = {
         rule,
         seeds,
-        matchups: buildMatchups(seeds),
-        isComplete: seeds.length >= PUBLIC_PROGRESSION_CONFIG.bracketSize,
+        matchups,
+        projectedRounds: buildProjectedRounds(matchups, rule),
+        isComplete: seeds.length >= rule.bracketSize,
       };
 
       return accumulator;
@@ -167,19 +221,86 @@ function toProjectionTeam(
   };
 }
 
-function seedBracket(teams: SeededProjectionTeam[]): SeededProjectionTeam[] {
+function seedBracket(teams: SeededProjectionTeam[], rule: ProgressionRule): SeededProjectionTeam[] {
   return teams
     .sort(compareSeedCandidates)
-    .slice(0, PUBLIC_PROGRESSION_CONFIG.bracketSize)
+    .slice(0, rule.bracketSize)
     .map((team, index) => ({ ...team, seed: index + 1 }));
 }
 
-function buildMatchups(seeds: SeededProjectionTeam[]): ProjectedMatchup[] {
-  return PUBLIC_PROGRESSION_CONFIG.matchupPattern.map(([topSeed, bottomSeed]) => ({
-    label: `${topSeed} vs ${bottomSeed}`,
-    top: seeds.find((team) => team.seed === topSeed),
-    bottom: seeds.find((team) => team.seed === bottomSeed),
+function buildMatchups(seeds: SeededProjectionTeam[], rule: ProgressionRule): ProjectedMatchup[] {
+  return rule.matchupPattern.map(([topSeed, bottomSeed]) => {
+    const top = seeds.find((team) => team.seed === topSeed);
+    const bottom = seeds.find((team) => team.seed === bottomSeed);
+
+    return {
+      label: `${topSeed} vs ${bottomSeed}`,
+      top,
+      bottom,
+      projectedWinner: projectWinner(top, bottom),
+    };
+  });
+}
+
+export function buildProjectedRounds(
+  matchups: ProjectedMatchup[],
+  rule: ProgressionRule
+): ProjectedBracketRounds {
+  const quarterfinals = matchups.map((matchup, index) => ({
+    label: `QF${index + 1}`,
+    matchupLabel: matchup.label,
+    top: matchup.top,
+    bottom: matchup.bottom,
+    projectedWinner: matchup.projectedWinner,
   }));
+
+  const semifinals = rule.semifinalPattern.map((semifinal) => {
+    const top = quarterfinals[semifinal.sourceMatchups[0]]?.projectedWinner;
+    const bottom = quarterfinals[semifinal.sourceMatchups[1]]?.projectedWinner;
+
+    return {
+      label: semifinal.label,
+      top,
+      bottom,
+      projectedWinner: projectWinner(top, bottom),
+    };
+  });
+
+  const final = {
+    label: 'Final',
+    top: semifinals[0]?.projectedWinner,
+    bottom: semifinals[1]?.projectedWinner,
+    projectedWinner: projectWinner(semifinals[0]?.projectedWinner, semifinals[1]?.projectedWinner),
+  };
+
+  return {
+    quarterfinals,
+    semifinals,
+    final,
+    champion: final.projectedWinner,
+  };
+}
+
+export function getBetterSeed(
+  teamA?: SeededProjectionTeam,
+  teamB?: SeededProjectionTeam
+): SeededProjectionTeam | undefined {
+  if (!teamA) {
+    return teamB;
+  }
+
+  if (!teamB) {
+    return teamA;
+  }
+
+  return (teamA.seed ?? Number.MAX_SAFE_INTEGER) < (teamB.seed ?? Number.MAX_SAFE_INTEGER) ? teamA : teamB;
+}
+
+export function projectWinner(
+  teamA?: SeededProjectionTeam,
+  teamB?: SeededProjectionTeam
+): SeededProjectionTeam | undefined {
+  return getBetterSeed(teamA, teamB);
 }
 
 function compareGroupRankCandidates(a: SeededProjectionTeam, b: SeededProjectionTeam): number {

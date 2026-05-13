@@ -12,9 +12,7 @@ import {
 } from '../matches/match-display.helpers';
 import {
   BracketProjection,
-  PUBLIC_PROGRESSION_CONFIG,
   PublicBracketKey,
-  SeededProjectionTeam,
   buildProgressionProjection,
 } from './progression-projection';
 
@@ -161,6 +159,7 @@ import {
               <div>
                 <p class="kicker">{{ bracket.rule.name }} bracket</p>
                 <h4>{{ bracket.rule.description }}</h4>
+                <p>{{ bracket.rule.matchFormat.label }}. Final results will replace projections when bracket matches are played.</p>
               </div>
               <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds</span>
             </div>
@@ -176,21 +175,21 @@ import {
                   <h4>Quarterfinals</h4>
                 </div>
 
-                <article class="bracket-match" *ngFor="let matchup of bracket.matchups; let i = index">
+                <article class="bracket-match" *ngFor="let matchup of bracket.projectedRounds.quarterfinals">
                   <div class="matchup-title">
-                    <span>QF{{ i + 1 }}</span>
-                    <strong>{{ matchup.label }}</strong>
+                    <span>{{ matchup.label }}</span>
+                    <strong>{{ matchup.matchupLabel }}</strong>
                   </div>
 
                   <ng-container *ngIf="matchup.top; else openTop">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.top }"></ng-container>
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.top, winner: matchup.projectedWinner }"></ng-container>
                   </ng-container>
                   <ng-template #openTop>
                     <div class="open-slot">Seed pending</div>
                   </ng-template>
 
                   <ng-container *ngIf="matchup.bottom; else openBottom">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.bottom }"></ng-container>
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.bottom, winner: matchup.projectedWinner }"></ng-container>
                   </ng-container>
                   <ng-template #openBottom>
                     <div class="open-slot">Seed pending</div>
@@ -204,13 +203,25 @@ import {
                   <h4>Semifinals</h4>
                 </div>
 
-                <article class="bracket-match projected-match" *ngFor="let semifinal of projectedSemifinals">
+                <article class="bracket-match projected-match" *ngFor="let semifinal of bracket.projectedRounds.semifinals">
                   <div class="matchup-title">
                     <span>{{ semifinal.label }}</span>
-                    <strong>Projected</strong>
+                    <strong>Based on seed order</strong>
                   </div>
-                  <div class="projected-slot">{{ semifinal.top }}</div>
-                  <div class="projected-slot">{{ semifinal.bottom }}</div>
+
+                  <ng-container *ngIf="semifinal.top; else openSemifinalTop">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: semifinal.top, winner: semifinal.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openSemifinalTop>
+                    <div class="projected-slot">Projection pending</div>
+                  </ng-template>
+
+                  <ng-container *ngIf="semifinal.bottom; else openSemifinalBottom">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: semifinal.bottom, winner: semifinal.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openSemifinalBottom>
+                    <div class="projected-slot">Projection pending</div>
+                  </ng-template>
                 </article>
               </section>
 
@@ -220,13 +231,25 @@ import {
                   <h4>Final</h4>
                 </div>
 
-                <article class="bracket-match projected-match final-match">
+                <article class="bracket-match projected-match final-match" *ngIf="bracket.projectedRounds.final as final">
                   <div class="matchup-title">
                     <span>Final</span>
-                    <strong>Projected</strong>
+                    <strong>Based on seed order</strong>
                   </div>
-                  <div class="projected-slot">Winner SF1</div>
-                  <div class="projected-slot">Winner SF2</div>
+
+                  <ng-container *ngIf="final.top; else openFinalTop">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: final.top, winner: final.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openFinalTop>
+                    <div class="projected-slot">Winner SF1</div>
+                  </ng-template>
+
+                  <ng-container *ngIf="final.bottom; else openFinalBottom">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: final.bottom, winner: final.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openFinalBottom>
+                    <div class="projected-slot">Winner SF2</div>
+                  </ng-template>
                 </article>
               </section>
 
@@ -237,9 +260,14 @@ import {
                 </div>
 
                 <article class="champion-card">
-                  <span class="projected-badge">Projected</span>
-                  <strong>Champion TBD</strong>
-                  <small>Winner of the final</small>
+                  <span class="projected-badge">Projected Champion</span>
+                  <ng-container *ngIf="bracket.projectedRounds.champion; else championPending">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: bracket.projectedRounds.champion, winner: bracket.projectedRounds.champion }"></ng-container>
+                  </ng-container>
+                  <ng-template #championPending>
+                    <strong>Champion TBD</strong>
+                    <small>Projection will fill once all {{ bracketSize }} seeds are available.</small>
+                  </ng-template>
                 </article>
               </section>
             </div>
@@ -311,13 +339,14 @@ import {
         </div>
       </ng-template>
 
-      <ng-template #compactSeed let-team>
-        <div class="compact-seed-row">
+      <ng-template #compactSeed let-team let-winner="winner">
+        <div class="compact-seed-row" [class.projected-winner]="winner?.teamId === team.teamId">
           <span class="seed-pill">#{{ team.seed }}</span>
           <div>
             <strong>{{ team.teamName }}</strong>
             <small>{{ team.groupName }} - Rank {{ team.groupRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
           </div>
+          <span class="advance-tag" *ngIf="winner?.teamId === team.teamId">Projected advance</span>
         </div>
       </ng-template>
     </article>
@@ -491,6 +520,13 @@ import {
         font-size: 1rem;
       }
 
+      .bracket-intro p:not(.kicker) {
+        max-width: 42rem;
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
       .seed-list,
       .matchup-grid {
         display: grid;
@@ -578,6 +614,31 @@ import {
         font-weight: 850;
       }
 
+      .compact-seed-row.projected-winner {
+        border-color: rgba(20, 184, 166, 0.36);
+        background:
+          linear-gradient(135deg, rgba(20, 184, 166, 0.14), transparent 54%),
+          rgba(30, 41, 59, 0.9);
+        box-shadow: inset 3px 0 0 rgba(20, 184, 166, 0.78);
+      }
+
+      .compact-seed-row.projected-winner .seed-pill {
+        background: rgba(20, 184, 166, 0.24);
+        color: #ccfbf1;
+      }
+
+      .advance-tag {
+        grid-column: 1 / -1;
+        justify-self: start;
+        padding: 0.22rem 0.42rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.2);
+        color: #bfdbfe;
+        font-size: 0.66rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
       .seed-pill {
         display: grid;
         place-items: center;
@@ -624,6 +685,10 @@ import {
       .champion-card small {
         color: var(--muted);
         font-weight: 850;
+      }
+
+      .champion-card .compact-seed-row {
+        width: 100%;
       }
 
       .seed-details {
@@ -1006,10 +1071,6 @@ export class TournamentViewerPageComponent implements OnDestroy {
   standings: Standing[] = [];
   activeTab: 'matches' | 'standings' | 'brackets' = 'matches';
   selectedBracket: PublicBracketKey = 'premier';
-  projectedSemifinals = [
-    { label: 'SF1', top: 'Winner QF1', bottom: 'Winner QF4' },
-    { label: 'SF2', top: 'Winner QF2', bottom: 'Winner QF3' },
-  ];
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
@@ -1051,7 +1112,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
   }
 
   get bracketSize(): number {
-    return PUBLIC_PROGRESSION_CONFIG.bracketSize;
+    return this.activeBracketProjection.rule.bracketSize;
   }
 
   get progression() {
