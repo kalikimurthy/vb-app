@@ -772,10 +772,12 @@ export class TournamentViewerPageComponent implements OnDestroy {
   }
 
   loadReferenceData(): void {
-    this.api.list<Team>('teams').subscribe((r) => (this.teams = r.results));
+    this.api.list<Team>('teams', { tournament: this.tournamentId, page_size: 100 }).subscribe((r) => (this.teams = r.results));
     this.api.list<Court>('courts').subscribe((r) => (this.courts = r.results));
-    this.api.list<Group>('groups').subscribe((r) => (this.groups = r.results));
-    this.api.list<GroupTeam>('group-teams').subscribe((r) => (this.groupTeams = r.results));
+    this.api.list<Group>('groups', { tournament: this.tournamentId, page_size: 100 }).subscribe((r) => (this.groups = r.results));
+    this.api
+      .list<GroupTeam>('group-teams', { group__tournament: this.tournamentId, page_size: 200 })
+      .subscribe((r) => (this.groupTeams = r.results));
   }
 
   loadTournament(): void {
@@ -790,7 +792,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   loadStandings(): void {
     this.api
-      .list<Standing>('standings', { tournament: this.tournamentId, ordering: 'rank' })
+      .list<Standing>('standings', { tournament: this.tournamentId, ordering: 'rank', page_size: 100 })
       .subscribe((r) => (this.standings = r.results));
   }
 
