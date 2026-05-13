@@ -52,6 +52,7 @@ import {
             <span>{{ getCourtName(m) }}</span>
             <span>{{ formatMatchTime(m.scheduled_time) }}</span>
             <span *ngIf="getGroupName(m.group)">{{ getGroupName(m.group) }}</span>
+            <span>Ref: {{ m.referee_name || 'TBD' }}</span>
           </div>
 
           <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'score-update' }">
@@ -77,6 +78,16 @@ import {
         display: grid;
         gap: 0.72rem;
         padding: 0.95rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .score-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0.22rem;
+        background: linear-gradient(180deg, var(--accent), var(--teal));
       }
 
       .card-top {

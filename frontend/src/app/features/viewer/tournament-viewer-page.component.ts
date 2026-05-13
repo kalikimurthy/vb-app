@@ -338,7 +338,6 @@ import {
             <span class="badge">{{ match.status === 'Live' ? 'LIVE' : match.status === 'Completed' ? 'FINAL' : 'Scheduled' }}</span>
             <span>{{ formatMatchTime(match.scheduled_time) }}</span>
             <span>{{ getCourtName(match) }}</span>
-            <span *ngIf="getGroupName(match.group)">{{ getGroupName(match.group) }}</span>
           </div>
 
           <div class="team-line">
@@ -348,6 +347,11 @@ import {
           <div class="team-line">
             <strong>{{ getTeamName(match.team_b) }}</strong>
             <span>{{ match.score_b }}</span>
+          </div>
+
+          <div class="official-meta">
+            <span *ngIf="getGroupName(match.group)">{{ getGroupName(match.group) }}</span>
+            <span>Ref: {{ match.referee_name || 'TBD' }}</span>
           </div>
         </article>
       </ng-template>
@@ -934,6 +938,14 @@ import {
         background: rgba(30, 41, 59, 0.88);
       }
 
+      .viewer-card::before {
+        content: "";
+        width: 3rem;
+        height: 0.22rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), var(--teal));
+      }
+
       .viewer-card.live {
         border-color: rgba(245, 158, 11, 0.38);
         box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
@@ -956,6 +968,23 @@ import {
         padding: 0.24rem 0.48rem;
         border-radius: 999px;
         background: rgba(15, 23, 42, 0.5);
+      }
+
+      .official-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .official-meta span {
+        min-width: 0;
+        padding: 0.34rem 0.55rem;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 0.75rem;
+        background: rgba(15, 23, 42, 0.42);
+        color: var(--muted-strong);
+        font-size: 0.76rem;
+        font-weight: 850;
       }
 
       .badge {

@@ -29,6 +29,7 @@ import {
           <span>{{ getCourtName(match) }}</span>
           <span>{{ formatMatchTime(match.scheduled_time) }}</span>
           <span *ngIf="getGroupName(match.group)">{{ getGroupName(match.group) }}</span>
+          <span>Ref: {{ match.referee_name || 'TBD' }}</span>
         </div>
 
         <div class="scoreboard">
@@ -106,6 +107,9 @@ import {
         display: grid;
         gap: 1rem;
         padding: 1rem;
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.14), transparent 42%),
+          rgba(30, 41, 59, 0.9);
       }
 
       .match-meta {

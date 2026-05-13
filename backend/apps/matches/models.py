@@ -37,6 +37,7 @@ class Match(TimeStampedModel):
     manual_match = models.BooleanField(default=False)
     bracket_locked = models.BooleanField(default=False)
     court_name = models.CharField(max_length=120, blank=True)
+    referee_name = models.CharField(max_length=160, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=12, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED)
     score_a = models.PositiveIntegerField(default=0)

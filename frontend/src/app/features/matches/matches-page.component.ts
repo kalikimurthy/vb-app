@@ -53,6 +53,7 @@ import {
             <span>{{ getCourtName(m) }}</span>
             <span>{{ formatMatchTime(m.scheduled_time) }}</span>
             <span *ngIf="getGroupName(m.group)">{{ getGroupName(m.group) }}</span>
+            <span>Ref: {{ m.referee_name || 'TBD' }}</span>
             <span>{{ m.stage }}</span>
           </div>
 
@@ -73,6 +74,7 @@ import {
           <select [(ngModel)]="form.team_b" name="teamB"><option [ngValue]="null">Team B</option><option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option></select>
           <select [(ngModel)]="form.court" name="court"><option [ngValue]="null">Court</option><option *ngFor="let c of courts" [ngValue]="c.id">{{ c.name }}</option></select>
           <input [(ngModel)]="form.scheduled_time" name="scheduledTime" type="datetime-local" />
+          <input [(ngModel)]="form.referee_name" name="refereeName" placeholder="Referee / ref team" />
           <select [(ngModel)]="form.pool_type" name="poolType"><option value="none">none</option><option value="premium">premium</option><option value="star">star</option></select>
           <button type="submit" [disabled]="isCreating">{{ isCreating ? 'Creating...' : 'Create Match' }}</button>
         </form>
@@ -97,6 +99,16 @@ import {
         display: grid;
         gap: 0.75rem;
         padding: 0.95rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .match-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0.22rem;
+        background: linear-gradient(180deg, var(--accent), var(--teal));
       }
 
       .match-card-top {

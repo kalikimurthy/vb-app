@@ -59,6 +59,7 @@ export interface Match {
   manual_match: boolean;
   bracket_locked: boolean;
   court_name?: string;
+  referee_name?: string;
   scheduled_time?: string | null;
   status: 'Scheduled' | 'Live' | 'Completed';
   score_a: number;

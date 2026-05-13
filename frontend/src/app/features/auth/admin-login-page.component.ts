@@ -15,6 +15,7 @@ import { AuthService } from '../../core/auth.service';
         <p class="kicker">Organizer access</p>
         <h2>Admin login</h2>
         <p class="login-copy">Sign in to manage tournaments, groups, matches, courts, and live scoring.</p>
+        <p class="demo-hint">Local demo: admin / admin123</p>
 
         <form (ngSubmit)="login()" #loginForm="ngForm">
           <label>
@@ -64,6 +65,17 @@ import { AuthService } from '../../core/auth.service';
       .login-copy {
         margin: 0.45rem 0 1rem;
         color: var(--muted);
+      }
+
+      .demo-hint {
+        margin: -0.35rem 0 1rem;
+        padding: 0.5rem 0.65rem;
+        border: 1px solid rgba(20, 184, 166, 0.22);
+        border-radius: 0.8rem;
+        background: rgba(20, 184, 166, 0.08);
+        color: #99f6e4;
+        font-size: 0.82rem;
+        font-weight: 850;
       }
 
       form {
