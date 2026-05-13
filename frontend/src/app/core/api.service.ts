@@ -6,7 +6,7 @@ import { Paginated } from './models';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
-private baseUrl = 'http://127.0.0.1:8000/api';
+  private baseUrl = 'http://127.0.0.1:8000/api';
 
   list<T>(path: string, params?: Record<string, string | number | boolean>): Observable<Paginated<T>> {
     let httpParams = new HttpParams();

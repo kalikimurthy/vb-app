@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from './core/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -19,19 +20,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             </div>
           </div>
 
-          <div class="status-pill" *ngIf="!isViewerRoute; else publicStatus">
+          <div class="status-pill" [class.public]="isViewerRoute">
             <span></span>
-            Admin
+            {{ isViewerRoute ? 'Read-only' : isLoginRoute ? 'Login' : 'Admin' }}
           </div>
-          <ng-template #publicStatus>
-            <div class="status-pill public">
-              <span></span>
-              Read-only
-            </div>
-          </ng-template>
         </div>
 
-        <nav *ngIf="!isViewerRoute" aria-label="Primary navigation">
+        <nav *ngIf="showAdminChrome" aria-label="Primary navigation">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/tournaments" routerLinkActive="active">Tournaments</a>
           <a routerLink="/teams-players" routerLinkActive="active">Teams/Players</a>
@@ -42,6 +37,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/standings" routerLinkActive="active">Standings</a>
           <a routerLink="/brackets" routerLinkActive="active">Brackets</a>
           <a routerLink="/court-schedule" routerLinkActive="active">Court Schedule</a>
+          <button type="button" class="logout-button" (click)="logout()">Logout</button>
         </nav>
       </header>
 
@@ -177,6 +173,21 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
       }
 
+      .logout-button {
+        flex: 0 0 auto;
+        min-height: auto;
+        padding: 0.48rem 0.72rem;
+        border-color: rgba(239, 68, 68, 0.28);
+        background: rgba(239, 68, 68, 0.1);
+        color: #fecaca;
+        font-size: 0.84rem;
+      }
+
+      .logout-button:hover {
+        border-color: rgba(239, 68, 68, 0.45);
+        background: rgba(239, 68, 68, 0.18);
+      }
+
       .container {
         box-sizing: border-box;
         width: min(1180px, 100%);
@@ -202,9 +213,21 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   ],
 })
 export class AppComponent {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private auth: AuthService) {}
 
   get isViewerRoute(): boolean {
     return this.router.url.startsWith('/viewer/');
+  }
+
+  get isLoginRoute(): boolean {
+    return this.router.url.startsWith('/admin/login');
+  }
+
+  get showAdminChrome(): boolean {
+    return !this.isViewerRoute && !this.isLoginRoute;
+  }
+
+  logout(): void {
+    this.auth.logout().subscribe(() => this.router.navigateByUrl('/admin/login'));
   }
 }

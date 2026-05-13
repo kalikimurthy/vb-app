@@ -10,6 +10,7 @@ from apps.groups.views import GroupViewSet, GroupTeamViewSet
 from apps.matches.views import MatchViewSet
 from apps.standings.views import StandingViewSet
 from apps.brackets.views import BracketViewSet
+from apps.common.auth_views import login_view, logout_view, me_view
 
 router = DefaultRouter()
 router.register(r"tournaments", TournamentViewSet, basename="tournament")
@@ -25,5 +26,8 @@ router.register(r"brackets", BracketViewSet, basename="bracket")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/auth/login/", login_view),
+    path("api/auth/logout/", logout_view),
+    path("api/auth/me/", me_view),
     path("api/", include(router.urls)),
 ]

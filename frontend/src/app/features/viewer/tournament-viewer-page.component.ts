@@ -126,31 +126,31 @@ import {
             <div>
               <p class="kicker">Projected progression</p>
               <h3>Projected Knockout Brackets</h3>
-              <p>Built from group standings. Premier uses ranks 1-2. Star uses ranks 3-4. 5th place is eliminated.</p>
+              <p>Based on overall pool-stage ranking. Projected results are read-only and will be replaced once knockout matches are played.</p>
             </div>
-            <span>Top 4 from each group advance</span>
+            <span>Overall ranks decide divisions</span>
           </div>
 
           <div class="progression-summary">
-            <span>Premier: 1st-2nd from each group</span>
-            <span>Star: 3rd-4th from each group</span>
-            <span>Eliminated: 5th from each group</span>
+            <span>Champions League: overall ranks 1-8</span>
+            <span>Premier League: overall ranks 9-16</span>
+            <span>Eliminated: overall ranks 17-20</span>
           </div>
 
           <div class="league-switch" aria-label="Bracket league">
             <button
               type="button"
-              [class.active]="selectedBracket === 'premier'"
-              (click)="selectedBracket = 'premier'"
+              [class.active]="selectedBracket === 'champions'"
+              (click)="selectedBracket = 'champions'"
             >
-              Premier
+              Champions League
             </button>
             <button
               type="button"
-              [class.active]="selectedBracket === 'star'"
-              (click)="selectedBracket = 'star'"
+              [class.active]="selectedBracket === 'premier'"
+              (click)="selectedBracket = 'premier'"
             >
-              Star
+              Premier League
             </button>
           </div>
 
@@ -159,7 +159,7 @@ import {
               <div>
                 <p class="kicker">{{ bracket.rule.name }} bracket</p>
                 <h4>{{ bracket.rule.description }}</h4>
-                <p>{{ bracket.rule.matchFormat.label }}. Final results will replace projections when bracket matches are played.</p>
+                <p>{{ bracket.rule.matchFormat.label }}. Based on seed order. Final results replace projections once knockout matches are played.</p>
               </div>
               <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds</span>
             </div>
@@ -228,6 +228,34 @@ import {
               <section class="bracket-round">
                 <div class="round-heading">
                   <span>Round 3</span>
+                  <h4>3rd Place</h4>
+                </div>
+
+                <article class="bracket-match projected-match" *ngIf="bracket.projectedRounds.thirdPlace as thirdPlace">
+                  <div class="matchup-title">
+                    <span>Loser SF1 vs Loser SF2</span>
+                    <strong>Projected</strong>
+                  </div>
+
+                  <ng-container *ngIf="thirdPlace.top; else openThirdTop">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: thirdPlace.top, winner: thirdPlace.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openThirdTop>
+                    <div class="projected-slot">Loser SF1</div>
+                  </ng-template>
+
+                  <ng-container *ngIf="thirdPlace.bottom; else openThirdBottom">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: thirdPlace.bottom, winner: thirdPlace.projectedWinner }"></ng-container>
+                  </ng-container>
+                  <ng-template #openThirdBottom>
+                    <div class="projected-slot">Loser SF2</div>
+                  </ng-template>
+                </article>
+              </section>
+
+              <section class="bracket-round">
+                <div class="round-heading">
+                  <span>Round 4</span>
                   <h4>Final</h4>
                 </div>
 
@@ -286,7 +314,7 @@ import {
             <div class="section-title compact-title">
               <div>
                 <p class="kicker">Eliminated</p>
-                <h3>5th-place teams</h3>
+                <h3>Overall ranks 17-20</h3>
               </div>
               <span>{{ progression.eliminated.length }} Teams</span>
             </div>
@@ -325,10 +353,10 @@ import {
       </ng-template>
 
       <ng-template #teamSeed let-team>
-        <div class="seed-number">#{{ team.seed || team.groupRank }}</div>
+        <div class="seed-number">#{{ team.seed || team.overallRank }}</div>
         <div class="seed-main">
           <strong>{{ team.teamName }}</strong>
-          <small>{{ team.groupName }} - Group rank {{ team.groupRank }}</small>
+          <small>{{ team.groupName }} - Overall rank {{ team.overallRank }}</small>
         </div>
         <div class="seed-stats">
           <span>{{ team.wins }}-{{ team.losses }}</span>
@@ -344,7 +372,7 @@ import {
           <span class="seed-pill">#{{ team.seed }}</span>
           <div>
             <strong>{{ team.teamName }}</strong>
-            <small>{{ team.groupName }} - Rank {{ team.groupRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
+            <small>{{ team.groupName }} - Overall {{ team.overallRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
           </div>
           <span class="advance-tag" *ngIf="winner?.teamId === team.teamId">Projected advance</span>
         </div>
@@ -982,7 +1010,7 @@ import {
         }
 
         .bracket-board {
-          grid-template-columns: 1.55fr 1fr 1fr 0.85fr;
+          grid-template-columns: 1.55fr 1fr 1fr 1fr 0.85fr;
           align-items: center;
         }
 
@@ -1004,6 +1032,7 @@ import {
         }
 
         .bracket-round:nth-child(3),
+        .bracket-round:nth-child(4),
         .champion-round {
           gap: 2.4rem;
         }
@@ -1070,7 +1099,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
   matches: Match[] = [];
   standings: Standing[] = [];
   activeTab: 'matches' | 'standings' | 'brackets' = 'matches';
-  selectedBracket: PublicBracketKey = 'premier';
+  selectedBracket: PublicBracketKey = 'champions';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
@@ -1079,8 +1108,8 @@ export class TournamentViewerPageComponent implements OnDestroy {
       this.activeTab = requestedTab;
     }
 
-    if (this.route.snapshot.queryParamMap.get('bracket') === 'star') {
-      this.selectedBracket = 'star';
+    if (this.route.snapshot.queryParamMap.get('bracket') === 'premier') {
+      this.selectedBracket = 'premier';
     }
 
     this.loadReferenceData();

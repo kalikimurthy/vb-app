@@ -12,20 +12,23 @@ import { BracketsPageComponent } from './features/brackets/brackets-page.compone
 import { CourtSchedulePageComponent } from './features/matches/court-schedule-page.component';
 import { MatchScorePageComponent } from './features/matches/match-score-page.component';
 import { TournamentViewerPageComponent } from './features/viewer/tournament-viewer-page.component';
+import { AdminLoginPageComponent } from './features/auth/admin-login-page.component';
+import { adminGuard } from './core/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: DashboardPageComponent },
-  { path: 'tournaments', component: TournamentsPageComponent },
-  { path: 'tournaments/:id', component: TournamentDetailPageComponent },
-  { path: 'teams-players', component: TeamsPlayersPageComponent },
-  { path: 'courts', component: CourtsPageComponent },
-  { path: 'groups', component: GroupsPageComponent },
-  { path: 'matches', component: MatchesPageComponent },
-  { path: 'matches/:matchId/score', component: MatchScorePageComponent },
-  { path: 'score-update', component: ScoreUpdatePageComponent },
-  { path: 'standings', component: StandingsPageComponent },
-  { path: 'brackets', component: BracketsPageComponent },
-  { path: 'court-schedule', component: CourtSchedulePageComponent },
+  { path: 'admin/login', component: AdminLoginPageComponent },
+  { path: '', component: DashboardPageComponent, canActivate: [adminGuard] },
+  { path: 'tournaments', component: TournamentsPageComponent, canActivate: [adminGuard] },
+  { path: 'tournaments/:id', component: TournamentDetailPageComponent, canActivate: [adminGuard] },
+  { path: 'teams-players', component: TeamsPlayersPageComponent, canActivate: [adminGuard] },
+  { path: 'courts', component: CourtsPageComponent, canActivate: [adminGuard] },
+  { path: 'groups', component: GroupsPageComponent, canActivate: [adminGuard] },
+  { path: 'matches', component: MatchesPageComponent, canActivate: [adminGuard] },
+  { path: 'matches/:matchId/score', component: MatchScorePageComponent, canActivate: [adminGuard] },
+  { path: 'score-update', component: ScoreUpdatePageComponent, canActivate: [adminGuard] },
+  { path: 'standings', component: StandingsPageComponent, canActivate: [adminGuard] },
+  { path: 'brackets', component: BracketsPageComponent, canActivate: [adminGuard] },
+  { path: 'court-schedule', component: CourtSchedulePageComponent, canActivate: [adminGuard] },
   { path: 'viewer/tournament/:id', component: TournamentViewerPageComponent },
   { path: '**', redirectTo: '' },
 ];
