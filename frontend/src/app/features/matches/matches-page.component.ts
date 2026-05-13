@@ -56,7 +56,9 @@ import {
             <span>{{ m.stage }}</span>
           </div>
 
-          <a class="score-link" [routerLink]="['/matches', m.id, 'score']">Score Match</a>
+          <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
+            Score Match
+          </a>
         </article>
       </section>
 
@@ -72,8 +74,10 @@ import {
           <select [(ngModel)]="form.court" name="court"><option [ngValue]="null">Court</option><option *ngFor="let c of courts" [ngValue]="c.id">{{ c.name }}</option></select>
           <input [(ngModel)]="form.scheduled_time" name="scheduledTime" type="datetime-local" />
           <select [(ngModel)]="form.pool_type" name="poolType"><option value="none">none</option><option value="premium">premium</option><option value="star">star</option></select>
-          <button type="submit">Create Match</button>
+          <button type="submit" [disabled]="isCreating">{{ isCreating ? 'Creating...' : 'Create Match' }}</button>
         </form>
+        <p *ngIf="createSuccess" class="success">{{ createSuccess }}</p>
+        <p *ngIf="createError" class="error">{{ createError }}</p>
       </section>
     </article>
   `,
@@ -102,6 +106,10 @@ import {
         gap: 1rem;
       }
 
+      .match-card-top > div {
+        min-width: 0;
+      }
+
       .match-card h3 {
         margin: 0.2rem 0 0;
         font-size: 1rem;
@@ -109,6 +117,7 @@ import {
 
       .status-chip {
         flex: 0 0 auto;
+        max-width: 8rem;
         padding: 0.35rem 0.55rem;
         border: 1px solid var(--line);
         border-radius: 999px;
@@ -129,9 +138,9 @@ import {
 
       .score-line {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) minmax(2.4rem, auto);
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .score-line span {
@@ -205,6 +214,9 @@ export class MatchesPageComponent {
   groups: Group[] = [];
   courts: Court[] = [];
   matches: Match[] = [];
+  isCreating = false;
+  createError = '';
+  createSuccess = '';
 
   form: Match = {
     tournament: 0,
@@ -241,7 +253,37 @@ export class MatchesPageComponent {
   }
 
   create(): void {
-    this.api.create<Match>('matches', this.form).subscribe(() => this.load());
+    this.createError = '';
+    this.createSuccess = '';
+
+    if (!this.form.tournament) {
+      this.createError = 'Select a tournament before creating a match.';
+      return;
+    }
+
+    if (!this.form.team_a || !this.form.team_b) {
+      this.createError = 'Select both teams before creating a match.';
+      return;
+    }
+
+    if (this.form.team_a === this.form.team_b) {
+      this.createError = 'A match needs two different teams.';
+      return;
+    }
+
+    this.isCreating = true;
+
+    this.api.create<Match>('matches', this.form).subscribe({
+      next: () => {
+        this.createSuccess = 'Match created.';
+        this.isCreating = false;
+        this.load();
+      },
+      error: (err) => {
+        this.createError = this.formatApiError(err);
+        this.isCreating = false;
+      },
+    });
   }
 
   getTournamentName(id?: number | null): string {
@@ -262,5 +304,21 @@ export class MatchesPageComponent {
 
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
+  }
+
+  private formatApiError(err: unknown): string {
+    const error = (err as { error?: unknown })?.error;
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error && typeof error === 'object') {
+      return Object.entries(error as Record<string, unknown>)
+        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+        .join(' | ');
+    }
+
+    return 'Request failed. Check that the backend is running and the match form is valid.';
   }
 }

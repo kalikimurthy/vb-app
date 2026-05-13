@@ -21,7 +21,7 @@ import {
         <div>
           <p class="kicker">Public scoreboard</p>
           <h2>{{ tournament.name }}</h2>
-          <p>{{ tournament.date }} · {{ tournament.format }}</p>
+          <p>{{ tournament.date }} - {{ tournament.format }}</p>
         </div>
         <div class="status-pill">{{ tournament.status || 'Draft' }}</div>
       </header>
@@ -161,12 +161,13 @@ import {
 
       .team-line {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) minmax(2.4rem, auto);
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .team-line strong {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

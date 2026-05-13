@@ -54,7 +54,7 @@ import {
             <span *ngIf="getGroupName(m.group)">{{ getGroupName(m.group) }}</span>
           </div>
 
-          <a class="score-link" [routerLink]="['/matches', m.id, 'score']">
+          <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'score-update' }">
             {{ m.status === 'Scheduled' ? 'Start scoring' : m.status === 'Live' ? 'Continue scoring' : 'Score match' }}
           </a>
         </article>
@@ -85,6 +85,10 @@ import {
         gap: 1rem;
       }
 
+      .card-top > div {
+        min-width: 0;
+      }
+
       .card-top h3 {
         margin: 0.2rem 0 0;
         font-size: 1rem;
@@ -93,6 +97,7 @@ import {
       .status-chip {
         flex: 0 0 auto;
         align-self: start;
+        max-width: 8rem;
         padding: 0.35rem 0.55rem;
         border: 1px solid var(--line);
         border-radius: 999px;
@@ -113,9 +118,9 @@ import {
 
       .score-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) minmax(2.4rem, auto);
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .score-row span {

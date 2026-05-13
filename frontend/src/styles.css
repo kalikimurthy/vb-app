@@ -25,11 +25,13 @@
 
 html {
   background: var(--bg);
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   font-family: Inter, Poppins, "Segoe UI", system-ui, -apple-system, sans-serif;
   background:
     radial-gradient(circle at 16% -8%, rgba(37, 99, 235, 0.22), transparent 28rem),

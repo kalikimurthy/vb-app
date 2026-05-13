@@ -5,6 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
 import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
 
+type IdRef = number | { id?: number };
+type TeamPlayerWithRefs = Omit<TeamPlayer, 'team' | 'player' | 'tournament'> & {
+  team?: IdRef;
+  player?: IdRef | Player;
+  tournament?: IdRef;
+};
+
 @Component({
   selector: 'app-teams-players-page',
   standalone: true,
@@ -420,6 +427,7 @@ import { Player, Team, TeamPlayer, Tournament } from '../../core/models';
 })
 export class TeamsPlayersPageComponent {
   private api = inject(ApiService);
+  private duplicateAssignmentMessage = 'This player is already on this team.';
 
   tournaments: Tournament[] = [];
   teams: Team[] = [];
@@ -515,6 +523,8 @@ export class TeamsPlayersPageComponent {
           return;
         }
 
+        this.upsertPlayer(player);
+
         this.assignPlayerToSelectedTeam(player.id, {
           onSuccess: () => {
             this.newPlayerName = '';
@@ -585,13 +595,29 @@ export class TeamsPlayersPageComponent {
       return [];
     }
 
-    const playerIds = new Set(
-      this.teamPlayers
-        .filter((assignment) => assignment.team === teamId)
-        .map((assignment) => assignment.player)
-    );
+    const seenPlayerIds = new Set<number>();
+    const roster: Player[] = [];
 
-    return this.players.filter((player) => player.id && playerIds.has(player.id));
+    this.teamPlayers
+      .filter((assignment) => this.getAssignmentTeamId(assignment) === teamId)
+      .forEach((assignment) => {
+        const playerId = this.getAssignmentPlayerId(assignment);
+
+        if (!playerId || seenPlayerIds.has(playerId)) {
+          return;
+        }
+
+        const player =
+          this.players.find((current) => current.id === playerId) ??
+          this.getAssignmentPlayer(assignment);
+
+        if (player) {
+          roster.push(player);
+          seenPlayerIds.add(playerId);
+        }
+      });
+
+    return roster;
   }
 
   getPlayerName(playerId?: number): string {
@@ -620,26 +646,58 @@ export class TeamsPlayersPageComponent {
     playerId: number,
     handlers: { onSuccess: () => void; onError: (err: unknown) => void }
   ): void {
-    if (!this.selectedTeam?.id) {
+    const selectedTeam = this.selectedTeam;
+
+    if (!selectedTeam?.id) {
       handlers.onError({ error: 'Select a team first.' });
+      return;
+    }
+
+    const tournament = selectedTeam.tournament;
+
+    if (
+      this.teamPlayers.some(
+        (assignment) =>
+          this.getAssignmentTeamId(assignment) === selectedTeam.id &&
+          this.getAssignmentPlayerId(assignment) === playerId &&
+          this.getAssignmentTournamentId(assignment) === tournament
+      )
+    ) {
+      handlers.onError({ error: { non_field_errors: [this.duplicateAssignmentMessage] } });
       return;
     }
 
     this.api
       .create<TeamPlayer>('team-players', {
-        team: this.selectedTeam.id,
+        team: selectedTeam.id,
         player: playerId,
-        tournament: this.selectedTeam.tournament,
+        tournament,
       })
       .subscribe({
-        next: handlers.onSuccess,
+        next: (assignment) => {
+          this.upsertAssignment({
+            ...assignment,
+            team: assignment.team ?? selectedTeam.id,
+            player: assignment.player ?? playerId,
+            tournament: assignment.tournament ?? tournament,
+          });
+          handlers.onSuccess();
+        },
         error: handlers.onError,
       });
   }
 
   private reloadPlayersAndAssignments(): void {
+    const selectedId = this.selectedTeam?.id;
+
     this.api.list<Player>('players').subscribe((r) => (this.players = r.results));
-    this.loadTeamPlayers();
+    this.api.list<TeamPlayer>('team-players').subscribe({
+      next: (r) => {
+        this.teamPlayers = r.results;
+        this.selectedTeam = this.teams.find((team) => team.id === selectedId) ?? this.selectedTeam;
+      },
+      error: (err) => (this.assignmentError = this.formatApiError(err)),
+    });
   }
 
   private loadTeamPlayers(): void {
@@ -653,15 +711,76 @@ export class TeamsPlayersPageComponent {
     const error = (err as { error?: unknown })?.error;
 
     if (typeof error === 'string') {
+      if (this.isDuplicateAssignmentError(error)) {
+        return this.duplicateAssignmentMessage;
+      }
+
       return error;
     }
 
     if (error && typeof error === 'object') {
+      if (this.isDuplicateAssignmentError(error)) {
+        return this.duplicateAssignmentMessage;
+      }
+
       return Object.entries(error as Record<string, unknown>)
         .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
         .join(' | ');
     }
 
     return 'Request failed. Check that the backend is running and the form is valid.';
+  }
+
+  private upsertAssignment(assignment: TeamPlayer): void {
+    const exists = this.teamPlayers.some(
+      (current) =>
+        this.getAssignmentTeamId(current) === this.getAssignmentTeamId(assignment) &&
+        this.getAssignmentPlayerId(current) === this.getAssignmentPlayerId(assignment) &&
+        this.getAssignmentTournamentId(current) === this.getAssignmentTournamentId(assignment)
+    );
+
+    if (!exists) {
+      this.teamPlayers = [...this.teamPlayers, assignment];
+    }
+  }
+
+  private upsertPlayer(player: Player): void {
+    if (!player.id) {
+      return;
+    }
+
+    this.players = this.players.some((current) => current.id === player.id)
+      ? this.players.map((current) => (current.id === player.id ? player : current))
+      : [...this.players, player];
+  }
+
+  private isDuplicateAssignmentError(error: unknown): boolean {
+    return JSON.stringify(error).toLowerCase().includes('unique set');
+  }
+
+  getAssignmentTeamId(assignment: TeamPlayer): number | undefined {
+    return this.getIdRef((assignment as TeamPlayerWithRefs).team);
+  }
+
+  getAssignmentPlayerId(assignment: TeamPlayer): number | undefined {
+    return this.getIdRef((assignment as TeamPlayerWithRefs).player);
+  }
+
+  private getAssignmentTournamentId(assignment: TeamPlayer): number | undefined {
+    return this.getIdRef((assignment as TeamPlayerWithRefs).tournament);
+  }
+
+  private getAssignmentPlayer(assignment: TeamPlayer): Player | undefined {
+    const player = (assignment as TeamPlayerWithRefs).player;
+
+    if (player && typeof player === 'object' && 'name' in player) {
+      return player as Player;
+    }
+
+    return undefined;
+  }
+
+  private getIdRef(value?: IdRef | Player): number | undefined {
+    return typeof value === 'number' ? value : value?.id;
   }
 }

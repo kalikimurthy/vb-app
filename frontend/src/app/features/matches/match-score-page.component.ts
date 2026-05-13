@@ -18,7 +18,7 @@ import {
   imports: [CommonModule, RouterLink],
   template: `
     <article class="score-page" *ngIf="match; else loading">
-      <a routerLink="/matches" class="back-link">Back to matches</a>
+      <a [routerLink]="backLink" class="back-link">Back to {{ backLabel }}</a>
 
       <section class="panel match-panel">
         <div class="match-meta">
@@ -66,6 +66,9 @@ import {
         </div>
 
         <div class="action-row">
+          <button type="button" class="live-button" (click)="markLive()" [disabled]="isSaving">
+            Mark Live
+          </button>
           <button type="button" (click)="saveScore()" [disabled]="isSaving">
             {{ isSaving ? 'Saving...' : 'Save Score' }}
           </button>
@@ -162,12 +165,15 @@ import {
       }
 
       .score-controls {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
         gap: 0.6rem;
+        min-width: 0;
       }
 
       .score-btn {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
         min-height: 3.1rem;
         font-size: 1.35rem;
       }
@@ -196,6 +202,10 @@ import {
         background: linear-gradient(135deg, var(--success), var(--teal));
       }
 
+      .live-button {
+        background: linear-gradient(135deg, #f59e0b, var(--teal));
+      }
+
       @media (min-width: 760px) {
         .scoreboard {
           grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1fr);
@@ -211,7 +221,7 @@ import {
         }
 
         .action-row {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(3, 1fr);
         }
       }
     `,
@@ -232,9 +242,17 @@ export class MatchScorePageComponent {
   isSaving = false;
   message = '';
   error = '';
+  backLink = '/matches';
+  backLabel = 'matches';
 
   constructor() {
     this.loadReferenceData();
+    const from = this.route.snapshot.queryParamMap.get('from');
+    if (from === 'score-update') {
+      this.backLink = '/score-update';
+      this.backLabel = 'score update';
+    }
+
     const id = Number(this.route.snapshot.paramMap.get('matchId'));
     if (id) {
       this.loadMatch(id);
@@ -271,6 +289,11 @@ export class MatchScorePageComponent {
 
   saveScore(): void {
     this.persistScore(this.status, 'Score saved.');
+  }
+
+  markLive(): void {
+    this.status = 'Live';
+    this.persistScore('Live', 'Match marked live.');
   }
 
   completeMatch(): void {

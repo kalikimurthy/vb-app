@@ -58,6 +58,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       }
 
       .topbar-inner {
+        box-sizing: border-box;
         width: min(1180px, 100%);
         margin: 0 auto;
         padding: 0.8rem 1rem 0.55rem;
@@ -127,6 +128,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       }
 
       nav {
+        box-sizing: border-box;
         width: min(1180px, 100%);
         margin: 0 auto;
         padding: 0 1rem 0.85rem;
@@ -162,6 +164,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       }
 
       .container {
+        box-sizing: border-box;
         width: min(1180px, 100%);
         margin: 0 auto;
         padding: 1rem;
@@ -177,7 +180,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         }
 
         .container {
-          padding: 0.85rem;
+          width: calc(100vw - 1.7rem);
+          padding: 0.85rem 0;
         }
       }
     `,
