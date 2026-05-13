@@ -385,7 +385,10 @@ import {
 
     <ng-template #loading>
       <article class="viewer-page">
-        <div class="panel empty-state">Loading tournament scoreboard...</div>
+        <div class="panel empty-state" *ngIf="viewerError; else loadingMessage">{{ viewerError }}</div>
+        <ng-template #loadingMessage>
+          <div class="panel empty-state">Loading tournament scoreboard...</div>
+        </ng-template>
       </article>
     </ng-template>
   `,
@@ -1127,6 +1130,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
   groupTeams: GroupTeam[] = [];
   matches: Match[] = [];
   standings: Standing[] = [];
+  viewerError = '';
   activeTab: 'matches' | 'standings' | 'brackets' = 'matches';
   selectedBracket: PublicBracketKey = 'champions';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
@@ -1191,12 +1195,18 @@ export class TournamentViewerPageComponent implements OnDestroy {
   }
 
   loadTournament(): void {
-    this.api.get<Tournament>('tournaments', this.tournamentId).subscribe((tournament) => (this.tournament = tournament));
+    this.viewerError = '';
+    this.api.get<Tournament>('tournaments', this.tournamentId).subscribe({
+      next: (tournament) => (this.tournament = tournament),
+      error: () => {
+        this.viewerError = `Tournament ${this.tournamentId} was not found. Rerun the seed command and open the latest demo tournament ID.`;
+      },
+    });
   }
 
   loadMatches(): void {
     this.api
-      .list<Match>('matches', { tournament: this.tournamentId, ordering: 'scheduled_time' })
+      .list<Match>('matches', { tournament: this.tournamentId, ordering: 'scheduled_time', page_size: 100 })
       .subscribe((r) => (this.matches = r.results));
   }
 
