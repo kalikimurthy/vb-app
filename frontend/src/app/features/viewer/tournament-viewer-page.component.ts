@@ -34,6 +34,38 @@ import {
         </div>
       </header>
 
+      <section class="viewer-summary" aria-label="Tournament status summary">
+        <article class="summary-card live-summary" *ngIf="featuredLiveMatch; else noLiveMatch">
+          <p class="kicker">Now Live</p>
+          <ng-container *ngTemplateOutlet="summaryMatch; context: { $implicit: featuredLiveMatch }"></ng-container>
+        </article>
+        <ng-template #noLiveMatch>
+          <article class="summary-card muted-summary">
+            <p class="kicker">Now Live</p>
+            <h3>No live matches right now</h3>
+            <p>{{ completedMatches.length }} of {{ matches.length }} matches completed</p>
+          </article>
+        </ng-template>
+
+        <article class="summary-card" *ngIf="nextScheduledMatch; else noNextMatch">
+          <p class="kicker">Next Up</p>
+          <ng-container *ngTemplateOutlet="summaryMatch; context: { $implicit: nextScheduledMatch }"></ng-container>
+        </article>
+        <ng-template #noNextMatch>
+          <article class="summary-card muted-summary">
+            <p class="kicker">Next Up</p>
+            <h3>All scheduled matches are complete</h3>
+            <p>Check completed results and projected brackets.</p>
+          </article>
+        </ng-template>
+
+        <article class="summary-card totals-summary">
+          <p class="kicker">Tournament</p>
+          <h3>{{ completedMatches.length }} / {{ matches.length }}</h3>
+          <p>Completed matches</p>
+        </article>
+      </section>
+
       <section class="viewer-tabs" aria-label="Public viewer sections">
         <button type="button" [class.active]="activeTab === 'matches'" (click)="activeTab = 'matches'">
           Matches
@@ -201,7 +233,7 @@ import {
           <div class="section-title">
             <div>
               <p class="kicker">Projected progression</p>
-              <h3>Projected Knockout Brackets</h3>
+              <h3>Projected Bracket</h3>
               <p>Based on overall pool-stage ranking. Projected results are read-only and will be replaced once knockout matches are played.</p>
             </div>
             <span>Overall ranks decide divisions</span>
@@ -411,18 +443,15 @@ import {
       <ng-template #matchCard let-match>
         <article class="viewer-card" [class.live]="match.status === 'Live'" [class.completed]="match.status === 'Completed'">
           <div class="card-meta">
-            <span class="badge">{{ match.status === 'Live' ? 'LIVE' : match.status === 'Completed' ? 'FINAL' : 'Scheduled' }}</span>
             <span>{{ formatMatchTime(match.scheduled_time) }}</span>
             <span>{{ getCourtName(match) }}</span>
+            <span class="badge">{{ match.status === 'Live' ? 'LIVE' : match.status === 'Completed' ? 'Completed' : 'Scheduled' }}</span>
           </div>
 
-          <div class="team-line">
+          <div class="compact-scoreline">
             <strong>{{ getTeamName(match.team_a) }}</strong>
-            <span>{{ match.score_a }}</span>
-          </div>
-          <div class="team-line">
+            <span>{{ match.score_a }} - {{ match.score_b }}</span>
             <strong>{{ getTeamName(match.team_b) }}</strong>
-            <span>{{ match.score_b }}</span>
           </div>
 
           <div class="official-meta">
@@ -456,6 +485,19 @@ import {
           </div>
           <span class="advance-tag" *ngIf="winner?.teamId === team.teamId">Projected advance</span>
         </div>
+      </ng-template>
+
+      <ng-template #summaryMatch let-match>
+        <div class="summary-match-meta">
+          <span>{{ formatMatchTime(match.scheduled_time) }}</span>
+          <span>{{ getCourtName(match) }}</span>
+          <span>{{ match.status }}</span>
+        </div>
+        <h3>{{ getTeamName(match.team_a) }} vs {{ getTeamName(match.team_b) }}</h3>
+        <p>
+          <strong>{{ match.score_a }} - {{ match.score_b }}</strong>
+          <span *ngIf="match.referee_name"> - Ref: {{ match.referee_name }}</span>
+        </p>
       </ng-template>
     </article>
 
@@ -499,6 +541,70 @@ import {
         color: #99f6e4;
         font-size: 0.76rem;
         font-weight: 900;
+      }
+
+      .viewer-summary {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .summary-card {
+        display: grid;
+        gap: 0.38rem;
+        min-width: 0;
+        padding: 0.9rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 56%),
+          rgba(30, 41, 59, 0.86);
+      }
+
+      .summary-card.live-summary {
+        border-color: rgba(245, 158, 11, 0.32);
+        background:
+          linear-gradient(135deg, rgba(245, 158, 11, 0.14), transparent 56%),
+          rgba(30, 41, 59, 0.88);
+      }
+
+      .summary-card.muted-summary {
+        background: rgba(15, 23, 42, 0.45);
+      }
+
+      .summary-card h3 {
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 1rem;
+      }
+
+      .summary-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .summary-card p strong {
+        color: var(--ink);
+        font-size: 1rem;
+      }
+
+      .summary-match-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .summary-match-meta span {
+        padding: 0.24rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.55);
+        color: var(--muted-strong);
+        font-size: 0.72rem;
+        font-weight: 850;
       }
 
       .viewer-tabs {
@@ -574,6 +680,11 @@ import {
       .legend-item.eliminated {
         border-color: rgba(239, 68, 68, 0.3);
         color: #fecaca;
+      }
+
+      .legend-item.pending {
+        border-color: rgba(148, 163, 184, 0.22);
+        color: var(--muted-strong);
       }
 
       .groups-grid {
@@ -1169,7 +1280,7 @@ import {
 
       .viewer-card {
         display: grid;
-        gap: 0.65rem;
+        gap: 0.58rem;
         padding: 0.9rem;
         border: 1px solid var(--line);
         border-radius: 1rem;
@@ -1203,7 +1314,7 @@ import {
       }
 
       .card-meta span {
-        padding: 0.24rem 0.48rem;
+        padding: 0.28rem 0.5rem;
         border-radius: 999px;
         background: rgba(15, 23, 42, 0.5);
       }
@@ -1261,9 +1372,46 @@ import {
         text-align: right;
       }
 
+      .compact-scoreline {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .compact-scoreline strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 0.98rem;
+        font-weight: 850;
+      }
+
+      .compact-scoreline strong:last-child {
+        text-align: right;
+      }
+
+      .compact-scoreline span {
+        min-width: 4.6rem;
+        padding: 0.28rem 0.5rem;
+        border-radius: 0.75rem;
+        background: rgba(15, 23, 42, 0.58);
+        color: var(--ink);
+        font-size: 1.2rem;
+        font-weight: 950;
+        text-align: center;
+      }
+
       @media (min-width: 860px) {
         .match-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .viewer-summary {
+          grid-template-columns: 1.3fr 1.3fr 0.8fr;
+          align-items: stretch;
         }
 
         .groups-grid {
@@ -1353,6 +1501,26 @@ import {
         .section-title p:not(.kicker) {
           overflow-wrap: anywhere;
         }
+
+        .summary-card h3 {
+          white-space: normal;
+        }
+
+        .compact-scoreline {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 0.35rem;
+        }
+
+        .compact-scoreline strong,
+        .compact-scoreline strong:last-child {
+          text-align: left;
+        }
+
+        .compact-scoreline span {
+          justify-self: start;
+          min-width: 5.2rem;
+          order: 3;
+        }
       }
     `,
   ],
@@ -1410,6 +1578,14 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   get completedMatches(): Match[] {
     return this.matches.filter((match) => match.status === 'Completed');
+  }
+
+  get featuredLiveMatch(): Match | undefined {
+    return this.liveMatches[0];
+  }
+
+  get nextScheduledMatch(): Match | undefined {
+    return this.scheduledMatches[0];
   }
 
   get bracketSize(): number {
