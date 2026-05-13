@@ -127,7 +127,8 @@ import {
           <div class="section-title">
             <div>
               <p class="kicker">Projected progression</p>
-              <h3>Public bracket path</h3>
+              <h3>Projected Knockout Brackets</h3>
+              <p>Built from group standings. Premier uses ranks 1-2. Star uses ranks 3-4. 5th place is eliminated.</p>
             </div>
             <span>Top 4 from each group advance</span>
           </div>
@@ -165,39 +166,92 @@ import {
             </div>
 
             <div class="empty-state" *ngIf="!bracket.isComplete">
-              Bracket seeds will appear after group standings are available.
+              Bracket seeds will appear after group standings are available. {{ bracket.seeds.length }}/{{ bracketSize }} seeds are ready.
             </div>
 
-            <div class="seed-list" *ngIf="bracket.seeds.length">
-              <article class="seed-card" *ngFor="let team of bracket.seeds">
-                <ng-container *ngTemplateOutlet="teamSeed; context: { $implicit: team }"></ng-container>
-              </article>
+            <div class="bracket-board" *ngIf="bracket.seeds.length">
+              <section class="bracket-round">
+                <div class="round-heading">
+                  <span>Round 1</span>
+                  <h4>Quarterfinals</h4>
+                </div>
+
+                <article class="bracket-match" *ngFor="let matchup of bracket.matchups; let i = index">
+                  <div class="matchup-title">
+                    <span>QF{{ i + 1 }}</span>
+                    <strong>{{ matchup.label }}</strong>
+                  </div>
+
+                  <ng-container *ngIf="matchup.top; else openTop">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.top }"></ng-container>
+                  </ng-container>
+                  <ng-template #openTop>
+                    <div class="open-slot">Seed pending</div>
+                  </ng-template>
+
+                  <ng-container *ngIf="matchup.bottom; else openBottom">
+                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.bottom }"></ng-container>
+                  </ng-container>
+                  <ng-template #openBottom>
+                    <div class="open-slot">Seed pending</div>
+                  </ng-template>
+                </article>
+              </section>
+
+              <section class="bracket-round">
+                <div class="round-heading">
+                  <span>Round 2</span>
+                  <h4>Semifinals</h4>
+                </div>
+
+                <article class="bracket-match projected-match" *ngFor="let semifinal of projectedSemifinals">
+                  <div class="matchup-title">
+                    <span>{{ semifinal.label }}</span>
+                    <strong>Projected</strong>
+                  </div>
+                  <div class="projected-slot">{{ semifinal.top }}</div>
+                  <div class="projected-slot">{{ semifinal.bottom }}</div>
+                </article>
+              </section>
+
+              <section class="bracket-round">
+                <div class="round-heading">
+                  <span>Round 3</span>
+                  <h4>Final</h4>
+                </div>
+
+                <article class="bracket-match projected-match final-match">
+                  <div class="matchup-title">
+                    <span>Final</span>
+                    <strong>Projected</strong>
+                  </div>
+                  <div class="projected-slot">Winner SF1</div>
+                  <div class="projected-slot">Winner SF2</div>
+                </article>
+              </section>
+
+              <section class="bracket-round champion-round">
+                <div class="round-heading">
+                  <span>Finish</span>
+                  <h4>Champion</h4>
+                </div>
+
+                <article class="champion-card">
+                  <span class="projected-badge">Projected</span>
+                  <strong>Champion TBD</strong>
+                  <small>Winner of the final</small>
+                </article>
+              </section>
             </div>
 
-            <div class="matchup-grid" *ngIf="bracket.seeds.length">
-              <article class="matchup-card" *ngFor="let matchup of bracket.matchups">
-                <div class="matchup-title">
-                  <span>Quarterfinal</span>
-                  <strong>{{ matchup.label }}</strong>
-                </div>
-
-                <div class="matchup-team" *ngIf="matchup.top; else openTop">
-                  <ng-container *ngTemplateOutlet="teamSeed; context: { $implicit: matchup.top }"></ng-container>
-                </div>
-                <ng-template #openTop>
-                  <div class="open-slot">Seed pending</div>
-                </ng-template>
-
-                <div class="matchup-divider">vs</div>
-
-                <div class="matchup-team" *ngIf="matchup.bottom; else openBottom">
-                  <ng-container *ngTemplateOutlet="teamSeed; context: { $implicit: matchup.bottom }"></ng-container>
-                </div>
-                <ng-template #openBottom>
-                  <div class="open-slot">Seed pending</div>
-                </ng-template>
-              </article>
-            </div>
+            <details class="seed-details" *ngIf="bracket.seeds.length" open>
+              <summary>Seed list and stats</summary>
+              <div class="seed-list">
+                <article class="seed-card" *ngFor="let team of bracket.seeds">
+                  <ng-container *ngTemplateOutlet="teamSeed; context: { $implicit: team }"></ng-container>
+                </article>
+              </div>
+            </details>
           </ng-container>
 
           <section class="eliminated-section">
@@ -256,6 +310,16 @@ import {
           <span>Rating {{ team.rating }}</span>
         </div>
       </ng-template>
+
+      <ng-template #compactSeed let-team>
+        <div class="compact-seed-row">
+          <span class="seed-pill">#{{ team.seed }}</span>
+          <div>
+            <strong>{{ team.teamName }}</strong>
+            <small>{{ team.groupName }} - Rank {{ team.groupRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
+          </div>
+        </div>
+      </ng-template>
     </article>
 
     <ng-template #loading>
@@ -269,6 +333,8 @@ import {
       .viewer-page {
         display: grid;
         gap: 1rem;
+        max-width: 100%;
+        overflow-x: hidden;
       }
 
       .viewer-hero h2 {
@@ -306,7 +372,9 @@ import {
       }
 
       .viewer-tabs button {
+        min-width: 0;
         min-height: 2.55rem;
+        padding-inline: 0.45rem;
         border: 1px solid transparent;
         background: transparent;
         color: var(--muted);
@@ -338,6 +406,7 @@ import {
       .eliminated-section {
         display: grid;
         gap: 0.75rem;
+        min-width: 0;
       }
 
       .section-title {
@@ -345,10 +414,16 @@ import {
         align-items: flex-end;
         justify-content: space-between;
         gap: 1rem;
+        min-width: 0;
       }
 
       .section-title h3 {
         margin: 0.12rem 0 0;
+      }
+
+      .section-title p:not(.kicker) {
+        max-width: 44rem;
+        margin: 0.35rem 0 0;
       }
 
       .section-title span {
@@ -365,10 +440,12 @@ import {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
+        min-width: 0;
       }
 
       .progression-summary span,
       .bracket-intro > span {
+        max-width: 100%;
         padding: 0.38rem 0.58rem;
         border-radius: 999px;
         background: rgba(15, 23, 42, 0.5);
@@ -384,6 +461,7 @@ import {
       }
 
       .league-switch button {
+        min-width: 0;
         border: 1px solid var(--line);
         background: rgba(30, 41, 59, 0.76);
         color: var(--muted);
@@ -400,6 +478,7 @@ import {
         align-items: flex-end;
         justify-content: space-between;
         gap: 1rem;
+        min-width: 0;
         padding: 0.85rem;
         border: 1px solid var(--line);
         border-radius: 1rem;
@@ -416,6 +495,155 @@ import {
       .matchup-grid {
         display: grid;
         gap: 0.65rem;
+      }
+
+      .bracket-board {
+        display: grid;
+        gap: 0.8rem;
+        min-width: 0;
+      }
+
+      .bracket-round {
+        display: grid;
+        gap: 0.65rem;
+        min-width: 0;
+      }
+
+      .round-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .round-heading span,
+      .projected-badge {
+        padding: 0.28rem 0.48rem;
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.12);
+        color: #99f6e4;
+        font-size: 0.68rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .round-heading h4 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+
+      .bracket-match,
+      .champion-card {
+        position: relative;
+        display: grid;
+        gap: 0.5rem;
+        min-width: 0;
+        padding: 0.75rem;
+        border: 1px solid rgba(20, 184, 166, 0.18);
+        border-radius: 1rem;
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.1), transparent 48%),
+          rgba(17, 24, 39, 0.8);
+      }
+
+      .compact-seed-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.58rem;
+        align-items: center;
+        min-width: 0;
+        padding: 0.58rem;
+        border: 1px solid var(--line);
+        border-radius: 0.8rem;
+        background: rgba(30, 41, 59, 0.78);
+      }
+
+      .compact-seed-row strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 0.9rem;
+      }
+
+      .compact-seed-row small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 850;
+      }
+
+      .seed-pill {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.65rem;
+        background: rgba(20, 184, 166, 0.14);
+        color: #99f6e4;
+        font-size: 0.78rem;
+        font-weight: 950;
+      }
+
+      .projected-slot,
+      .open-slot {
+        min-width: 0;
+        padding: 0.72rem;
+        border: 1px dashed var(--line-strong);
+        border-radius: 0.85rem;
+        color: var(--muted);
+        background: rgba(15, 23, 42, 0.35);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+
+      .projected-match {
+        align-content: center;
+      }
+
+      .champion-card {
+        min-height: 8rem;
+        align-content: center;
+        justify-items: start;
+        border-color: rgba(245, 158, 11, 0.28);
+        background:
+          linear-gradient(135deg, rgba(245, 158, 11, 0.16), transparent 50%),
+          rgba(17, 24, 39, 0.82);
+      }
+
+      .champion-card strong {
+        color: var(--ink);
+        font-size: 1.05rem;
+      }
+
+      .champion-card small {
+        color: var(--muted);
+        font-weight: 850;
+      }
+
+      .seed-details {
+        display: grid;
+        gap: 0.65rem;
+        padding: 0.75rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.34);
+      }
+
+      .seed-details summary {
+        cursor: pointer;
+        color: var(--ink);
+        font-size: 0.9rem;
+        font-weight: 900;
+      }
+
+      .seed-details .seed-list {
+        margin-top: 0.65rem;
       }
 
       .seed-card,
@@ -516,12 +744,7 @@ import {
       }
 
       .open-slot {
-        padding: 0.85rem;
-        border: 1px dashed var(--line-strong);
-        border-radius: 0.95rem;
-        color: var(--muted);
-        background: rgba(15, 23, 42, 0.35);
-        font-weight: 850;
+        min-height: 3rem;
       }
 
       .muted-seed {
@@ -693,6 +916,33 @@ import {
           grid-template-columns: repeat(6, minmax(0, 1fr));
         }
 
+        .bracket-board {
+          grid-template-columns: 1.55fr 1fr 1fr 0.85fr;
+          align-items: center;
+        }
+
+        .bracket-round {
+          position: relative;
+        }
+
+        .bracket-round:not(:last-child)::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: -0.55rem;
+          width: 0.55rem;
+          border-top: 1px solid rgba(20, 184, 166, 0.28);
+        }
+
+        .bracket-round:nth-child(2) {
+          gap: 1.6rem;
+        }
+
+        .bracket-round:nth-child(3),
+        .champion-round {
+          gap: 2.4rem;
+        }
+
         .seed-list {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -700,6 +950,43 @@ import {
         .matchup-grid {
           grid-template-columns: repeat(4, minmax(0, 1fr));
           align-items: start;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .section-title,
+        .bracket-intro {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 0.55rem;
+        }
+
+        .section-title > span {
+          max-width: 100%;
+        }
+
+        .progression-summary {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .progression-summary span {
+          white-space: normal;
+        }
+
+        .viewer-tabs {
+          gap: 0.35rem;
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .viewer-tabs button,
+        .league-switch button {
+          padding-inline: 0.35rem;
+          font-size: 0.82rem;
+        }
+
+        .section-title p:not(.kicker) {
+          overflow-wrap: anywhere;
         }
       }
     `,
@@ -719,6 +1006,10 @@ export class TournamentViewerPageComponent implements OnDestroy {
   standings: Standing[] = [];
   activeTab: 'matches' | 'standings' | 'brackets' = 'matches';
   selectedBracket: PublicBracketKey = 'premier';
+  projectedSemifinals = [
+    { label: 'SF1', top: 'Winner QF1', bottom: 'Winner QF4' },
+    { label: 'SF2', top: 'Winner QF2', bottom: 'Winner QF3' },
+  ];
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
