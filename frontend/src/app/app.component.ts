@@ -58,11 +58,12 @@ import { AuthService } from './core/auth.service';
         z-index: 10;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%),
           linear-gradient(90deg, rgba(37, 99, 235, 0.08), transparent 40%, rgba(20, 184, 166, 0.08)),
-          rgba(2, 6, 23, 0.72);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.24);
+          rgba(2, 6, 23, 0.62);
+        backdrop-filter: blur(26px) saturate(150%);
+        -webkit-backdrop-filter: blur(26px) saturate(150%);
+        box-shadow: 0 16px 38px rgba(2, 6, 23, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
       }
 
       .topbar-inner {
@@ -89,10 +90,14 @@ import { AuthService } from './core/auth.service';
         width: 2.25rem;
         height: 2.25rem;
         border-radius: 0.85rem;
-        background: linear-gradient(135deg, var(--accent), var(--teal));
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 34%),
+          linear-gradient(135deg, var(--accent), var(--teal));
         color: var(--ink);
         font-size: 0.82rem;
         font-weight: 950;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.2);
       }
 
       .eyebrow {
@@ -163,18 +168,23 @@ import { AuthService } from './core/auth.service';
         padding: 0.48rem 0.72rem;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
-        background: rgba(15, 23, 42, 0.42);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+          rgba(15, 23, 42, 0.38);
         font-size: 0.84rem;
         font-weight: 800;
         white-space: nowrap;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px) saturate(135%);
+        -webkit-backdrop-filter: blur(14px) saturate(135%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
       }
 
       a.active,
       a:hover {
         border-color: rgba(20, 184, 166, 0.42);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(20, 184, 166, 0.14));
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent),
+          linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(20, 184, 166, 0.16));
         color: var(--ink);
         box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
       }

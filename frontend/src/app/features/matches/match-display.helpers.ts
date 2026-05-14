@@ -1,7 +1,5 @@
 import { Court, Group, Match, Team, Tournament } from '../../core/models';
 
-const TOURNAMENT_TIME_ZONE = 'America/New_York';
-
 export function getById<T extends { id?: number }>(items: T[], id?: number | null): T | undefined {
   return id ? items.find((item) => item.id === id) : undefined;
 }
@@ -22,19 +20,29 @@ export function getGroupName(groups: Group[], id?: number | null): string {
   return getById(groups, id)?.name ?? '';
 }
 
-export function formatMatchTime(value?: string | null): string {
+export function formatTournamentTime(value?: string | null): string {
   if (!value) {
     return 'Time TBD';
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const timeMatch = value.match(/T(\d{2}):(\d{2})/);
+  if (!timeMatch) {
     return 'Time TBD';
   }
 
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: TOURNAMENT_TIME_ZONE,
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date);
+  const hour24 = Number(timeMatch[1]);
+  const minute = timeMatch[2];
+
+  if (Number.isNaN(hour24) || hour24 < 0 || hour24 > 23) {
+    return 'Time TBD';
+  }
+
+  const suffix = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+
+  return `${hour12}:${minute} ${suffix}`;
+}
+
+export function formatMatchTime(value?: string | null): string {
+  return formatTournamentTime(value);
 }
