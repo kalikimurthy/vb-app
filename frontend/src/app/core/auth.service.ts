@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AuthUser {
   id: number;
@@ -18,7 +19,7 @@ interface AuthResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://127.0.0.1:8000/api/auth';
+  private baseUrl = `${environment.apiBaseUrl}/auth`;
   private userSubject = new BehaviorSubject<AuthUser | null>(null);
 
   user$ = this.userSubject.asObservable();
