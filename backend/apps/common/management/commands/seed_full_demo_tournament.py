@@ -218,5 +218,5 @@ class Command(BaseCommand):
         user.email = "admin@example.com"
         user.is_staff = True
         user.is_superuser = True
-        user.set_password("admin123")
+        user.set_password("vbadmin!!")
         user.save()

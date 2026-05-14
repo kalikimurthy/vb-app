@@ -5,7 +5,7 @@ WITH tournament_row AS (
     (created_at, updated_at, name, date, format, status)
   VALUES
     (NOW(), NOW(), 'TANA Atlanta Volleyball 2026', DATE '2026-05-16', 'Premium/Star', 'Live')
-  RETURNING id
+  RETURNING id, date
 ),
 
 courts AS (
