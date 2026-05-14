@@ -13,10 +13,17 @@
             "outputPath": "dist/vb-tournament-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.css"]
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "development": {
@@ -35,7 +42,8 @@
                 }
               ]
             }
-          }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
@@ -49,7 +57,8 @@
             "production": {
               "buildTarget": "vb-tournament-frontend:build:production"
             }
-          }
+          },
+          "defaultConfiguration": "development"
         }
       }
     }
