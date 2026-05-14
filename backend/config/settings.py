@@ -34,6 +34,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.common.middleware.LocalAuthCsrfBypassMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -103,5 +104,31 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+LOCAL_FRONTEND_ORIGINS = [
+    "http://127.0.0.1:4300",
+    "http://localhost:4300",
+]
+
+CSRF_TRUSTED_ORIGINS = sorted(
+    {
+        *LOCAL_FRONTEND_ORIGINS,
+        *[
+            origin.strip()
+            for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+            if origin.strip()
+        ],
+    }
+)
+
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "true").lower() == "true"
+CORS_ALLOWED_ORIGINS = sorted(
+    {
+        *LOCAL_FRONTEND_ORIGINS,
+        *[
+            origin.strip()
+            for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+            if origin.strip()
+        ],
+    }
+)
 CORS_ALLOW_CREDENTIALS = True

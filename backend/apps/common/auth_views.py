@@ -16,7 +16,6 @@ def _user_payload(user):
     }
 
 
-@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -31,7 +30,6 @@ def login_view(request):
     return Response({"user": _user_payload(user)})
 
 
-@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def logout_view(request):
@@ -46,3 +44,7 @@ def me_view(request):
         return Response({"authenticated": False}, status=status.HTTP_200_OK)
 
     return Response({"authenticated": True, "user": _user_payload(request.user)})
+
+
+login_view = csrf_exempt(login_view)
+logout_view = csrf_exempt(logout_view)

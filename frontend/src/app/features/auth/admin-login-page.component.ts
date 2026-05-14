@@ -126,7 +126,10 @@ export class AdminLoginPageComponent {
         this.router.navigateByUrl(returnUrl);
       },
       error: (error) => {
-        this.error = error?.error?.detail || 'Could not sign in.';
+        const backendMessage =
+          typeof error?.error === 'string' ? error.error : error?.error?.detail || error?.message;
+        this.error = backendMessage || `Could not sign in${error?.status ? ` (${error.status})` : ''}.`;
+        console.error('Admin login failed', error);
         this.isLoggingIn = false;
       },
     });

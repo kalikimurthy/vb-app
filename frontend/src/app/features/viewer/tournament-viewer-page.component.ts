@@ -27,6 +27,10 @@ import {
           <p class="kicker">Public Viewer</p>
           <h2>{{ tournament.name }}</h2>
           <p>{{ tournament.date }} - {{ tournament.format }}</p>
+          <div class="trust-labels" aria-label="Official schedule details">
+            <span>Official TANA Schedule</span>
+            <span>Court and referee assignments included</span>
+          </div>
         </div>
         <div class="viewer-status">
           <span class="status-pill">{{ tournament.status || 'Draft' }}</span>
@@ -60,9 +64,9 @@ import {
         </ng-template>
 
         <article class="summary-card totals-summary">
-          <p class="kicker">Tournament</p>
-          <h3>{{ completedMatches.length }} / {{ matches.length }}</h3>
-          <p>Completed matches</p>
+          <p class="kicker">Pool Matches</p>
+          <h3>{{ completedMatches.length }} / {{ matches.length }} complete</h3>
+          <p>Official pool schedule</p>
         </article>
       </section>
 
@@ -128,8 +132,8 @@ import {
           </div>
 
           <div class="projection-legend" aria-label="Division projection legend">
-            <span class="legend-item champions">Champions League: Overall ranks 1-8</span>
-            <span class="legend-item premier">Premier League: Overall ranks 9-16</span>
+            <span class="legend-item champions">Division A &middot; Champions League: Overall ranks 1-8</span>
+            <span class="legend-item premier">Division B &middot; Premier League: Overall ranks 9-16</span>
             <span class="legend-item eliminated">Eliminated: Overall ranks 17-20</span>
             <span class="legend-item pending">Pending: standings incomplete</span>
           </div>
@@ -240,8 +244,8 @@ import {
           </div>
 
           <div class="progression-summary">
-            <span>Champions League: overall ranks 1-8</span>
-            <span>Premier League: overall ranks 9-16</span>
+            <span>Division A &middot; Champions League: overall ranks 1-8</span>
+            <span>Division B &middot; Premier League: overall ranks 9-16</span>
             <span>Eliminated: overall ranks 17-20</span>
           </div>
 
@@ -251,14 +255,14 @@ import {
               [class.active]="selectedBracket === 'champions'"
               (click)="selectedBracket = 'champions'"
             >
-              Champions League
+              Division A &middot; Champions League
             </button>
             <button
               type="button"
               [class.active]="selectedBracket === 'premier'"
               (click)="selectedBracket = 'premier'"
             >
-              Premier League
+              Division B &middot; Premier League
             </button>
           </div>
 
@@ -408,7 +412,7 @@ import {
               </section>
             </div>
 
-            <details class="seed-details" *ngIf="bracket.seeds.length" open>
+            <details class="seed-details" *ngIf="bracket.seeds.length">
               <summary>Seed list and stats</summary>
               <div class="seed-list">
                 <article class="seed-card" *ngFor="let team of bracket.seeds">
@@ -529,6 +533,23 @@ import {
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: 0.5rem;
+      }
+
+      .trust-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+      }
+
+      .trust-labels span {
+        padding: 0.34rem 0.58rem;
+        border: 1px solid rgba(20, 184, 166, 0.22);
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.1);
+        color: #ccfbf1;
+        font-size: 0.72rem;
+        font-weight: 900;
       }
 
       .read-only-pill {
@@ -1078,7 +1099,7 @@ import {
         padding: 0.75rem;
         border: 1px solid var(--line);
         border-radius: 1rem;
-        background: rgba(15, 23, 42, 0.34);
+        background: rgba(15, 23, 42, 0.24);
       }
 
       .seed-details summary {
@@ -1507,19 +1528,18 @@ import {
         }
 
         .compact-scoreline {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
           gap: 0.35rem;
         }
 
-        .compact-scoreline strong,
-        .compact-scoreline strong:last-child {
-          text-align: left;
+        .compact-scoreline strong {
+          font-size: 0.9rem;
         }
 
         .compact-scoreline span {
-          justify-self: start;
-          min-width: 5.2rem;
-          order: 3;
+          min-width: 4rem;
+          padding-inline: 0.42rem;
+          font-size: 1.02rem;
         }
       }
     `,
@@ -1625,11 +1645,11 @@ export class TournamentViewerPageComponent implements OnDestroy {
   getProjectionForTeam(teamId?: number): string {
     const projectionClass = this.getProjectionClass(teamId);
     if (projectionClass === 'champions') {
-      return 'Champions League';
+      return 'Division A · Champions League';
     }
 
     if (projectionClass === 'premier') {
-      return 'Premier League';
+      return 'Division B · Premier League';
     }
 
     if (projectionClass === 'eliminated') {
