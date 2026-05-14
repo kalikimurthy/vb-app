@@ -1,12 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Paginated } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://127.0.0.1:8000/api';
+  private baseUrl = environment.apiBaseUrl;
 
   list<T>(path: string, params?: Record<string, string | number | boolean>): Observable<Paginated<T>> {
     let httpParams = new HttpParams();
