@@ -29,10 +29,10 @@ import { AuthService } from './core/auth.service';
         <nav *ngIf="showAdminChrome" aria-label="Primary navigation">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/tournaments" routerLinkActive="active">Tournaments</a>
+          <a routerLink="/matches" routerLinkActive="active">Matches</a>
           <a routerLink="/teams-players" routerLinkActive="active">Teams/Players</a>
           <a routerLink="/courts" routerLinkActive="active">Courts</a>
           <a routerLink="/groups" routerLinkActive="active">Groups</a>
-          <a routerLink="/matches" routerLinkActive="active">Matches</a>
           <a routerLink="/score-update" routerLinkActive="active">Score Update</a>
           <a routerLink="/standings" routerLinkActive="active">Standings</a>
           <a routerLink="/brackets" routerLinkActive="active">Brackets</a>
@@ -56,9 +56,13 @@ import { AuthService } from './core/auth.service';
         position: sticky;
         top: 0;
         z-index: 10;
-        border-bottom: 1px solid var(--line);
-        background: rgba(15, 23, 42, 0.92);
-        backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(90deg, rgba(37, 99, 235, 0.08), transparent 40%, rgba(20, 184, 166, 0.08)),
+          rgba(2, 6, 23, 0.72);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.24);
       }
 
       .topbar-inner {
@@ -157,12 +161,14 @@ import { AuthService } from './core/auth.service';
         color: var(--muted);
         text-decoration: none;
         padding: 0.48rem 0.72rem;
-        border: 1px solid var(--line);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
-        background: rgba(30, 41, 59, 0.68);
+        background: rgba(15, 23, 42, 0.42);
         font-size: 0.84rem;
         font-weight: 800;
         white-space: nowrap;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
       a.active,

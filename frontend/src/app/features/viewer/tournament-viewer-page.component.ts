@@ -574,18 +574,21 @@ import {
         gap: 0.38rem;
         min-width: 0;
         padding: 0.9rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
         background:
           linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 56%),
-          rgba(30, 41, 59, 0.86);
+          rgba(15, 23, 42, 0.56);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .summary-card.live-summary {
         border-color: rgba(245, 158, 11, 0.32);
         background:
           linear-gradient(135deg, rgba(245, 158, 11, 0.14), transparent 56%),
-          rgba(30, 41, 59, 0.88);
+          rgba(30, 41, 59, 0.58);
       }
 
       .summary-card.muted-summary {
@@ -633,9 +636,12 @@ import {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.5rem;
         padding: 0.35rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
-        background: rgba(15, 23, 42, 0.5);
+        background: rgba(15, 23, 42, 0.48);
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .viewer-tabs button {
@@ -649,7 +655,9 @@ import {
 
       .viewer-tabs button.active {
         border-color: rgba(20, 184, 166, 0.36);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.34), rgba(20, 184, 166, 0.22));
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.38), rgba(20, 184, 166, 0.22)),
+          rgba(15, 23, 42, 0.45);
         color: var(--ink);
       }
 
@@ -718,9 +726,12 @@ import {
         gap: 0.72rem;
         min-width: 0;
         padding: 0.88rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
-        background: rgba(30, 41, 59, 0.86);
+        background: rgba(15, 23, 42, 0.54);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .group-card-top,
@@ -911,9 +922,11 @@ import {
         gap: 1rem;
         min-width: 0;
         padding: 0.85rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
-        background: rgba(30, 41, 59, 0.72);
+        background: rgba(15, 23, 42, 0.54);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .bracket-intro h4 {
@@ -982,7 +995,10 @@ import {
         border-radius: 1rem;
         background:
           linear-gradient(135deg, rgba(37, 99, 235, 0.1), transparent 48%),
-          rgba(17, 24, 39, 0.8);
+          rgba(15, 23, 42, 0.56);
+        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.28);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .compact-seed-row {
@@ -1076,7 +1092,7 @@ import {
         border-color: rgba(245, 158, 11, 0.28);
         background:
           linear-gradient(135deg, rgba(245, 158, 11, 0.16), transparent 50%),
-          rgba(17, 24, 39, 0.82);
+          rgba(15, 23, 42, 0.6);
       }
 
       .champion-card strong {
@@ -1119,9 +1135,11 @@ import {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 0.65rem;
         padding: 0.75rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 0.95rem;
-        background: rgba(30, 41, 59, 0.88);
+        background: rgba(15, 23, 42, 0.54);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
       }
 
       .seed-number {
@@ -1228,9 +1246,11 @@ import {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 0.75rem;
         padding: 0.85rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
-        background: rgba(30, 41, 59, 0.88);
+        background: rgba(15, 23, 42, 0.54);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
       }
 
       .rank-block {
@@ -1303,9 +1323,12 @@ import {
         display: grid;
         gap: 0.58rem;
         padding: 0.9rem;
-        border: 1px solid var(--line);
+        border: 1px solid var(--glass-border);
         border-radius: 1rem;
-        background: rgba(30, 41, 59, 0.88);
+        background: rgba(15, 23, 42, 0.56);
+        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.25);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .viewer-card::before {

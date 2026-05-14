@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/api.service';
 import { Court, Match } from '../../core/models';
+import { formatMatchTime } from './match-display.helpers';
 
 @Component({
   selector: 'app-court-schedule-page',
@@ -22,7 +23,7 @@ import { Court, Match } from '../../core/models';
           <tr *ngFor="let m of matches">
             <td>#{{ m.id }}</td>
             <td>{{ m.court }}</td>
-            <td>{{ m.scheduled_time || '-' }}</td>
+            <td>{{ formatMatchTime(m.scheduled_time) }}</td>
             <td>{{ m.stage }}</td>
             <td>{{ m.status }}</td>
           </tr>
@@ -45,5 +46,9 @@ export class CourtSchedulePageComponent {
   load(): void {
     const params = this.courtId ? { court: this.courtId } : undefined;
     this.api.list<Match>('matches', params).subscribe((r) => (this.matches = r.results));
+  }
+
+  formatMatchTime(value?: string | null): string {
+    return formatMatchTime(value);
   }
 }
