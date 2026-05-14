@@ -1,5 +1,6 @@
-from pathlib import Path
 import os
+from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -78,7 +79,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = os.getenv("TZ", "UTC")
+_tz_raw = os.getenv("TZ", "UTC")
+TIME_ZONE = _tz_raw.lstrip(":") or "UTC"
+try:
+    ZoneInfo(TIME_ZONE)
+except ZoneInfoNotFoundError:
+    TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 

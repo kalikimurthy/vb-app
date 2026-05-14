@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -25,6 +26,7 @@ router.register(r"standings", StandingViewSet, basename="standing")
 router.register(r"brackets", BracketViewSet, basename="bracket")
 
 urlpatterns = [
+    path("", lambda request: JsonResponse({"status": "ok", "service": "vb-backend"})),
     path("admin/", admin.site.urls),
     path("api/auth/login/", login_view),
     path("api/auth/logout/", logout_view),
