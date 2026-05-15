@@ -46,6 +46,10 @@ export function getMatchFormatLabel(match: Match): string {
     return '';
   }
 
+  if (match.best_of === 3) {
+    return 'Final - Best of 3';
+  }
+
   const stage = normalizeStage(match.stage);
   if (stage.startsWith('quarter_final')) {
     return 'Quarterfinal - Best of 1 to 21';

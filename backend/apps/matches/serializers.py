@@ -19,7 +19,7 @@ class MatchSerializer(serializers.ModelSerializer):
 
         if current.bracket_locked and self.instance and any(
             k in attrs
-            for k in ["team_a", "team_b", "stage", "pool_type", "scheduled_time", "court", "manual_match"]
+            for k in ["team_a", "team_b", "stage", "pool_type", "best_of", "scheduled_time", "court", "manual_match"]
         ):
             raise serializers.ValidationError("Bracket is locked. Only score/status updates are allowed.")
 

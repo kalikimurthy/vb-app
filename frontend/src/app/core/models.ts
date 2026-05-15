@@ -56,6 +56,7 @@ export interface Match {
   match_type: 'league' | 'knockout';
   stage: string;
   pool_type: 'none' | 'premium' | 'star';
+  best_of?: number;
   manual_match: boolean;
   bracket_locked: boolean;
   court_name?: string;

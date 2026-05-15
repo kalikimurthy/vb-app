@@ -30,5 +30,6 @@ export const routes: Routes = [
   { path: 'brackets', component: BracketsPageComponent, canActivate: [adminGuard] },
   { path: 'court-schedule', component: CourtSchedulePageComponent, canActivate: [adminGuard] },
   { path: 'viewer/tournament/:id', component: TournamentViewerPageComponent },
+  { path: 'viewer/tournament/:id/brackets', component: TournamentViewerPageComponent },
   { path: '**', redirectTo: '' },
 ];

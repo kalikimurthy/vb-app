@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { Court, Group, GroupTeam, Match, Standing, Team, Tournament } from '../../core/models';
@@ -22,12 +22,12 @@ import {
 @Component({
   selector: 'app-tournament-viewer-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <article class="viewer-page" *ngIf="tournament; else loading">
       <header class="page-hero viewer-hero">
         <div>
-          <p class="kicker">Public Viewer</p>
+          <p class="kicker">{{ isBracketPage ? 'Public Brackets' : 'Public Viewer' }}</p>
           <h2>{{ tournament.name }}</h2>
           <p>{{ tournament.date }} - {{ tournament.format }}</p>
           <div class="trust-labels" aria-label="Official schedule details">
@@ -38,10 +38,13 @@ import {
         <div class="viewer-status">
           <span class="status-pill">{{ tournament.status || 'Draft' }}</span>
           <span class="read-only-pill">Read-only</span>
+          <a *ngIf="isBracketPage" class="viewer-link-pill" [routerLink]="['/viewer/tournament', tournamentId]">
+            Back to Scoreboard
+          </a>
         </div>
       </header>
 
-      <section class="viewer-summary" aria-label="Tournament status summary">
+      <section class="viewer-summary" aria-label="Tournament status summary" *ngIf="!isBracketPage">
         <article class="summary-card live-summary" *ngIf="featuredLiveMatch; else noLiveMatch">
           <p class="kicker">Now Live</p>
           <ng-container *ngTemplateOutlet="summaryMatch; context: { $implicit: featuredLiveMatch }"></ng-container>
@@ -73,7 +76,7 @@ import {
         </article>
       </section>
 
-      <section class="viewer-tabs" aria-label="Public viewer sections">
+      <section class="viewer-tabs" aria-label="Public viewer sections" *ngIf="!isBracketPage">
         <button type="button" [class.active]="activeTab === 'matches'" (click)="activeTab = 'matches'">
           Matches
         </button>
@@ -83,9 +86,9 @@ import {
         <button type="button" [class.active]="activeTab === 'standings'" (click)="activeTab = 'standings'">
           Standings
         </button>
-        <button type="button" [class.active]="activeTab === 'brackets'" (click)="activeTab = 'brackets'">
+        <a [routerLink]="['/viewer/tournament', tournamentId, 'brackets']">
           Brackets
-        </button>
+        </a>
       </section>
 
       <ng-container *ngIf="activeTab === 'matches'">
@@ -216,7 +219,7 @@ import {
         </section>
       </ng-container>
 
-      <ng-container *ngIf="activeTab === 'brackets'">
+      <ng-container *ngIf="activeTab === 'brackets' || isBracketPage">
         <section class="bracket-section">
           <div class="section-title">
             <div>
@@ -580,7 +583,8 @@ import {
         font-weight: 900;
       }
 
-      .read-only-pill {
+      .read-only-pill,
+      .viewer-link-pill {
         display: inline-flex;
         align-items: center;
         padding: 0.45rem 0.7rem;
@@ -590,6 +594,13 @@ import {
         color: #99f6e4;
         font-size: 0.76rem;
         font-weight: 900;
+        text-decoration: none;
+      }
+
+      .viewer-link-pill {
+        border-color: rgba(37, 99, 235, 0.34);
+        background: rgba(37, 99, 235, 0.14);
+        color: #bfdbfe;
       }
 
       .viewer-summary {
@@ -672,13 +683,19 @@ import {
         -webkit-backdrop-filter: blur(18px);
       }
 
-      .viewer-tabs button {
+      .viewer-tabs button,
+      .viewer-tabs a {
         min-width: 0;
         min-height: 2.55rem;
         padding-inline: 0.45rem;
         border: 1px solid transparent;
         background: transparent;
         color: var(--muted);
+        display: grid;
+        place-items: center;
+        border-radius: 0.8rem;
+        font-weight: 900;
+        text-decoration: none;
       }
 
       .viewer-tabs button.active {
@@ -1625,6 +1642,7 @@ import {
         }
 
         .viewer-tabs button,
+        .viewer-tabs a,
         .league-switch button {
           padding-inline: 0.35rem;
           font-size: 0.82rem;
@@ -1685,11 +1703,16 @@ export class TournamentViewerPageComponent implements OnDestroy {
   selectedBracket: PublicBracketKey = 'champions';
   bracketMode: 'official' | 'seeding' = 'official';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
+  isBracketPage = this.route.snapshot.routeConfig?.path === 'viewer/tournament/:id/brackets';
 
   constructor() {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab');
     if (requestedTab === 'groups' || requestedTab === 'standings' || requestedTab === 'brackets') {
       this.activeTab = requestedTab;
+    }
+
+    if (this.isBracketPage) {
+      this.activeTab = 'brackets';
     }
 
     if (this.route.snapshot.queryParamMap.get('bracket') === 'premier') {

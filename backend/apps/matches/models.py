@@ -34,6 +34,7 @@ class Match(TimeStampedModel):
     match_type = models.CharField(max_length=10, choices=MatchType.choices)
     stage = models.CharField(max_length=64, default="league")
     pool_type = models.CharField(max_length=10, choices=PoolType.choices, default=PoolType.NONE)
+    best_of = models.PositiveSmallIntegerField(default=1)
     manual_match = models.BooleanField(default=False)
     bracket_locked = models.BooleanField(default=False)
     court_name = models.CharField(max_length=120, blank=True)

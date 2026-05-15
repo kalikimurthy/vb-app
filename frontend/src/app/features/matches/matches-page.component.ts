@@ -102,7 +102,9 @@ import {
             <option value="league">Pool / group stage</option>
             <option value="knockout">Knockout</option>
           </select>
-          <input [(ngModel)]="editForm.stage" name="editStage" placeholder="stage (league, quarter_final_1, final)" />
+          <select [(ngModel)]="editForm.stage" name="editStage">
+            <option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
           <select [(ngModel)]="editForm.group" name="editGroup">
             <option [ngValue]="null">No Group</option>
             <option *ngFor="let g of groups" [ngValue]="g.id">{{ g.name }}</option>
@@ -126,6 +128,10 @@ import {
             <option value="premium">Division A · Champions League</option>
             <option value="star">Division B · Premier League</option>
           </select>
+          <select [(ngModel)]="editForm.best_of" name="editBestOf">
+            <option [ngValue]="1">Best of 1</option>
+            <option [ngValue]="3">Best of 3</option>
+          </select>
           <select [(ngModel)]="editForm.status" name="editStatus">
             <option value="Scheduled">Scheduled</option>
             <option value="Live">Live</option>
@@ -142,7 +148,9 @@ import {
         <form class="create-grid" (ngSubmit)="create()">
           <select [(ngModel)]="form.tournament" name="tournament"><option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option></select>
           <select [(ngModel)]="form.match_type" name="matchType"><option value="league">league</option><option value="knockout">knockout</option></select>
-          <input [(ngModel)]="form.stage" name="stage" placeholder="stage (quarter_final/semi_final/final/custom)" />
+          <select [(ngModel)]="form.stage" name="stage">
+            <option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
           <select [(ngModel)]="form.group" name="group"><option [ngValue]="null">No Group</option><option *ngFor="let g of groups" [ngValue]="g.id">{{ g.name }}</option></select>
           <select [(ngModel)]="form.team_a" name="teamA"><option [ngValue]="null">Team A</option><option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option></select>
           <select [(ngModel)]="form.team_b" name="teamB"><option [ngValue]="null">Team B</option><option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option></select>
@@ -150,6 +158,7 @@ import {
           <input [(ngModel)]="form.scheduled_time" name="scheduledTime" type="datetime-local" />
           <input [(ngModel)]="form.referee_name" name="refereeName" placeholder="Referee / ref team" />
           <select [(ngModel)]="form.pool_type" name="poolType"><option value="none">none</option><option value="premium">premium</option><option value="star">star</option></select>
+          <select [(ngModel)]="form.best_of" name="bestOf"><option [ngValue]="1">Best of 1</option><option [ngValue]="3">Best of 3</option></select>
           <button type="submit" [disabled]="isCreating">{{ isCreating ? 'Creating...' : 'Create Match' }}</button>
         </form>
         <p *ngIf="createSuccess" class="success">{{ createSuccess }}</p>
@@ -399,12 +408,24 @@ export class MatchesPageComponent {
   knockoutError = '';
   knockoutSuccess = '';
   editForm: Match | null = null;
+  stageOptions = [
+    { value: 'league', label: 'Pool / group stage' },
+    { value: 'quarter_final_1', label: 'Quarterfinal 1' },
+    { value: 'quarter_final_2', label: 'Quarterfinal 2' },
+    { value: 'quarter_final_3', label: 'Quarterfinal 3' },
+    { value: 'quarter_final_4', label: 'Quarterfinal 4' },
+    { value: 'semi_final_1', label: 'Semifinal 1' },
+    { value: 'semi_final_2', label: 'Semifinal 2' },
+    { value: 'third_place', label: '3rd Place' },
+    { value: 'final', label: 'Final' },
+  ];
 
   form: Match = {
     tournament: 0,
     match_type: 'league',
     stage: 'league',
     pool_type: 'none',
+    best_of: 1,
     manual_match: false,
     bracket_locked: false,
     status: 'Scheduled',
@@ -464,7 +485,15 @@ export class MatchesPageComponent {
 
     this.isCreating = true;
 
-    this.api.create<Match>('matches', this.form).subscribe({
+    const payload: Match = {
+      ...this.form,
+      group: this.form.match_type === 'knockout' ? null : this.form.group,
+      pool_type: this.form.match_type === 'league' ? 'none' : this.form.pool_type,
+      stage: this.form.stage || (this.form.match_type === 'league' ? 'league' : 'quarter_final_1'),
+      best_of: this.form.stage === 'final' ? 3 : this.form.best_of || 1,
+    };
+
+    this.api.create<Match>('matches', payload).subscribe({
       next: () => {
         this.createSuccess = 'Match created.';
         this.isCreating = false;
@@ -509,6 +538,7 @@ export class MatchesPageComponent {
     this.editSuccess = '';
     this.editForm = {
       ...match,
+      best_of: match.best_of || 1,
       scheduled_time: this.toDateTimeLocal(match.scheduled_time),
     };
   }
@@ -543,6 +573,7 @@ export class MatchesPageComponent {
       group: this.editForm.match_type === 'knockout' ? null : this.editForm.group,
       pool_type: this.editForm.match_type === 'league' ? 'none' : this.editForm.pool_type,
       stage: this.editForm.stage || (this.editForm.match_type === 'league' ? 'league' : 'quarter_final_1'),
+      best_of: this.editForm.stage === 'final' ? 3 : this.editForm.best_of || 1,
     };
 
     this.isUpdating = true;
@@ -551,6 +582,7 @@ export class MatchesPageComponent {
         this.editSuccess = 'Match updated.';
         this.editForm = {
           ...match,
+          best_of: match.best_of || 1,
           scheduled_time: this.toDateTimeLocal(match.scheduled_time),
         };
         this.isUpdating = false;

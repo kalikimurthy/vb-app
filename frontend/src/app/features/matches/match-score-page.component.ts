@@ -68,6 +68,10 @@ import {
           {{ autosaveStatus }}
         </div>
 
+        <div class="format-note" *ngIf="match.best_of === 3">
+          Final match: Best of 3. Use the score boxes for sets won until set-by-set scoring is added.
+        </div>
+
         <div class="action-row">
           <button type="button" class="live-button" (click)="markLive()" [disabled]="isSaving">
             {{ status === 'Live' ? 'Mark Live' : 'Start Live' }}
@@ -200,6 +204,16 @@ import {
 
       .autosave-row.failed {
         color: #fecaca;
+      }
+
+      .format-note {
+        padding: 0.75rem 0.85rem;
+        border: 1px solid rgba(20, 184, 166, 0.22);
+        border-radius: 0.9rem;
+        background: rgba(20, 184, 166, 0.1);
+        color: #ccfbf1;
+        font-size: 0.85rem;
+        font-weight: 850;
       }
 
       .complete-button {
