@@ -8,6 +8,9 @@ import {
   formatMatchTime,
   getCourtName,
   getGroupName,
+  getMatchFormatLabel,
+  getMatchStageLabel,
+  normalizeStage,
   getTeamName,
 } from '../matches/match-display.helpers';
 import {
@@ -86,38 +89,19 @@ import {
       </section>
 
       <ng-container *ngIf="activeTab === 'matches'">
-        <section class="match-section" *ngIf="liveMatches.length">
-          <h3>Live now</h3>
-          <div class="match-grid">
-            <ng-container *ngFor="let match of liveMatches">
-              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-            </ng-container>
-          </div>
-        </section>
-
-        <section class="match-section">
-          <h3>Upcoming</h3>
-          <div class="match-grid" *ngIf="scheduledMatches.length; else noUpcoming">
-            <ng-container *ngFor="let match of scheduledMatches">
-              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-            </ng-container>
-          </div>
-          <ng-template #noUpcoming>
-            <div class="empty-state">No scheduled matches.</div>
-          </ng-template>
-        </section>
-
-        <section class="match-section">
-          <h3>Completed</h3>
-          <div class="match-grid" *ngIf="completedMatches.length; else noCompleted">
-            <ng-container *ngFor="let match of completedMatches">
-              <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
-            </ng-container>
-          </div>
-          <ng-template #noCompleted>
-            <div class="empty-state">No completed matches yet.</div>
-          </ng-template>
-        </section>
+        <ng-container *ngFor="let section of matchSections">
+          <section class="match-section" *ngIf="section.matches.length">
+            <div class="match-section-heading">
+              <h3>{{ section.title }}</h3>
+              <span>{{ section.matches.length }} Matches</span>
+            </div>
+            <div class="match-grid">
+              <ng-container *ngFor="let match of section.matches">
+                <ng-container *ngTemplateOutlet="matchCard; context: { $implicit: match }"></ng-container>
+              </ng-container>
+            </div>
+          </section>
+        </ng-container>
       </ng-container>
 
       <ng-container *ngIf="activeTab === 'groups'">
@@ -236,9 +220,11 @@ import {
         <section class="bracket-section">
           <div class="section-title">
             <div>
-              <p class="kicker">Projected progression</p>
-              <h3>Projected Bracket</h3>
-              <p>Based on overall pool-stage ranking. Projected results are read-only and will be replaced once knockout matches are played.</p>
+              <p class="kicker">Knockout bracket</p>
+              <h3>{{ bracketMode === 'official' ? 'Official Bracket' : 'Seeding Preview' }}</h3>
+              <p>
+                Official bracket shows real knockout matches. Seeding preview shows possible quarterfinal pairings only.
+              </p>
             </div>
             <span>Overall ranks decide divisions</span>
           </div>
@@ -266,47 +252,51 @@ import {
             </button>
           </div>
 
+          <div class="league-switch bracket-mode-switch" aria-label="Bracket mode">
+            <button type="button" [class.active]="bracketMode === 'official'" (click)="bracketMode = 'official'">
+              Official Bracket
+            </button>
+            <button type="button" [class.active]="bracketMode === 'seeding'" (click)="bracketMode = 'seeding'">
+              Seeding Preview
+            </button>
+          </div>
+
           <ng-container *ngIf="activeBracketProjection as bracket">
             <div class="bracket-intro">
               <div>
                 <p class="kicker">{{ bracket.rule.name }} bracket</p>
                 <h4>{{ bracket.rule.description }}</h4>
-                <p>{{ bracket.rule.matchFormat.label }}. Based on seed order. Final results replace projections once knockout matches are played.</p>
+                <p *ngIf="bracketMode === 'official'">
+                  Bracket will fill after official knockout matches are created. Final results populate advancement.
+                </p>
+                <p *ngIf="bracketMode === 'seeding'">
+                  Preview only - not official. Quarterfinal seed pairings only; no winners are projected.
+                </p>
               </div>
               <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds</span>
             </div>
 
-            <div class="empty-state" *ngIf="!bracket.isComplete">
-              Bracket seeds will appear after group standings are available. {{ bracket.seeds.length }}/{{ bracketSize }} seeds are ready.
-            </div>
-
-            <div class="bracket-board" *ngIf="bracket.seeds.length">
+            <div class="bracket-board official-board" *ngIf="bracketMode === 'official'">
               <section class="bracket-round">
                 <div class="round-heading">
                   <span>Round 1</span>
                   <h4>Quarterfinals</h4>
                 </div>
 
-                <article class="bracket-match" *ngFor="let matchup of bracket.projectedRounds.quarterfinals">
-                  <div class="matchup-title">
-                    <span>{{ matchup.label }}</span>
-                    <strong>{{ matchup.matchupLabel }}</strong>
-                  </div>
-
-                  <ng-container *ngIf="matchup.top; else openTop">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.top, winner: matchup.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openTop>
-                    <div class="open-slot">Seed pending</div>
-                  </ng-template>
-
-                  <ng-container *ngIf="matchup.bottom; else openBottom">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.bottom, winner: matchup.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openBottom>
-                    <div class="open-slot">Seed pending</div>
-                  </ng-template>
-                </article>
+                <ng-container *ngIf="getOfficialRoundMatches('quarter_final').length; else qfPlaceholders">
+                  <article class="bracket-match" *ngFor="let officialMatch of getOfficialRoundMatches('quarter_final'); let index = index">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'QF' + (index + 1) }"></ng-container>
+                  </article>
+                </ng-container>
+                <ng-template #qfPlaceholders>
+                  <article class="bracket-match" *ngFor="let matchup of bracket.matchups; let index = index">
+                    <div class="matchup-title">
+                      <span>QF{{ index + 1 }}</span>
+                      <strong>{{ matchup.label }}</strong>
+                    </div>
+                    <div class="open-slot">? vs ?</div>
+                  </article>
+                </ng-template>
               </section>
 
               <section class="bracket-round">
@@ -315,26 +305,27 @@ import {
                   <h4>Semifinals</h4>
                 </div>
 
-                <article class="bracket-match projected-match" *ngFor="let semifinal of bracket.projectedRounds.semifinals">
-                  <div class="matchup-title">
-                    <span>{{ semifinal.label }}</span>
-                    <strong>Based on seed order</strong>
-                  </div>
-
-                  <ng-container *ngIf="semifinal.top; else openSemifinalTop">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: semifinal.top, winner: semifinal.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openSemifinalTop>
-                    <div class="projected-slot">Projection pending</div>
-                  </ng-template>
-
-                  <ng-container *ngIf="semifinal.bottom; else openSemifinalBottom">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: semifinal.bottom, winner: semifinal.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openSemifinalBottom>
-                    <div class="projected-slot">Projection pending</div>
-                  </ng-template>
-                </article>
+                <ng-container *ngIf="getOfficialRoundMatches('semi_final').length; else sfPlaceholders">
+                  <article class="bracket-match projected-match" *ngFor="let officialMatch of getOfficialRoundMatches('semi_final'); let index = index">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF' + (index + 1) }"></ng-container>
+                  </article>
+                </ng-container>
+                <ng-template #sfPlaceholders>
+                  <article class="bracket-match projected-match">
+                    <div class="matchup-title">
+                      <span>SF1</span>
+                      <strong>Winner QF1 vs Winner QF2</strong>
+                    </div>
+                    <div class="projected-slot">Winner QF1 vs Winner QF2</div>
+                  </article>
+                  <article class="bracket-match projected-match">
+                    <div class="matchup-title">
+                      <span>SF2</span>
+                      <strong>Winner QF3 vs Winner QF4</strong>
+                    </div>
+                    <div class="projected-slot">Winner QF3 vs Winner QF4</div>
+                  </article>
+                </ng-template>
               </section>
 
               <section class="bracket-round">
@@ -343,26 +334,18 @@ import {
                   <h4>3rd Place</h4>
                 </div>
 
-                <article class="bracket-match projected-match" *ngIf="bracket.projectedRounds.thirdPlace as thirdPlace">
+                <article class="bracket-match projected-match" *ngIf="getOfficialRoundMatches('third_place')[0] as officialThird; else thirdPlacePlaceholder">
+                  <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialThird, label: '3rd Place' }"></ng-container>
+                </article>
+                <ng-template #thirdPlacePlaceholder>
+                <article class="bracket-match projected-match">
                   <div class="matchup-title">
                     <span>Loser SF1 vs Loser SF2</span>
-                    <strong>Projected</strong>
+                    <strong>Official result pending</strong>
                   </div>
-
-                  <ng-container *ngIf="thirdPlace.top; else openThirdTop">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: thirdPlace.top, winner: thirdPlace.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openThirdTop>
-                    <div class="projected-slot">Loser SF1</div>
-                  </ng-template>
-
-                  <ng-container *ngIf="thirdPlace.bottom; else openThirdBottom">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: thirdPlace.bottom, winner: thirdPlace.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openThirdBottom>
-                    <div class="projected-slot">Loser SF2</div>
-                  </ng-template>
+                  <div class="projected-slot">Loser SF1 vs Loser SF2</div>
                 </article>
+                </ng-template>
               </section>
 
               <section class="bracket-round">
@@ -371,26 +354,18 @@ import {
                   <h4>Final</h4>
                 </div>
 
-                <article class="bracket-match projected-match final-match" *ngIf="bracket.projectedRounds.final as final">
+                <article class="bracket-match projected-match final-match" *ngIf="getOfficialRoundMatches('final')[0] as officialFinal; else finalPlaceholder">
+                  <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialFinal, label: 'Final' }"></ng-container>
+                </article>
+                <ng-template #finalPlaceholder>
+                <article class="bracket-match projected-match final-match">
                   <div class="matchup-title">
                     <span>Final</span>
-                    <strong>Based on seed order</strong>
+                    <strong>Final · Best of 3</strong>
                   </div>
-
-                  <ng-container *ngIf="final.top; else openFinalTop">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: final.top, winner: final.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openFinalTop>
-                    <div class="projected-slot">Winner SF1</div>
-                  </ng-template>
-
-                  <ng-container *ngIf="final.bottom; else openFinalBottom">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: final.bottom, winner: final.projectedWinner }"></ng-container>
-                  </ng-container>
-                  <ng-template #openFinalBottom>
-                    <div class="projected-slot">Winner SF2</div>
-                  </ng-template>
+                  <div class="projected-slot">Winner SF1 vs Winner SF2</div>
                 </article>
+                </ng-template>
               </section>
 
               <section class="bracket-round champion-round">
@@ -400,17 +375,52 @@ import {
                 </div>
 
                 <article class="champion-card">
-                  <span class="projected-badge">Projected Champion</span>
-                  <ng-container *ngIf="bracket.projectedRounds.champion; else championPending">
-                    <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: bracket.projectedRounds.champion, winner: bracket.projectedRounds.champion }"></ng-container>
-                  </ng-container>
-                  <ng-template #championPending>
-                    <strong>Champion TBD</strong>
-                    <small>Projection will fill once all {{ bracketSize }} seeds are available.</small>
-                  </ng-template>
+                  <span class="projected-badge">Champion TBD</span>
+                  <strong>{{ officialChampionName }}</strong>
+                  <small>{{ officialChampionName === 'Champion TBD' ? 'Champion appears after the official final is completed.' : 'Official final completed.' }}</small>
                 </article>
               </section>
             </div>
+
+            <div class="empty-state" *ngIf="bracketMode === 'official' && !officialKnockoutMatches.length">
+              Official knockout matches will appear after they are generated.
+            </div>
+
+            <ng-container *ngIf="bracketMode === 'seeding'">
+              <div class="empty-state" *ngIf="!bracket.isComplete">
+                Bracket seeds will appear after group standings are available. {{ bracket.seeds.length }}/{{ bracketSize }} seeds are ready.
+              </div>
+
+              <div class="bracket-board seeding-board" *ngIf="bracket.seeds.length">
+                <section class="bracket-round">
+                  <div class="round-heading">
+                    <span>Preview only</span>
+                    <h4>Quarterfinal Pairings</h4>
+                  </div>
+
+                  <article class="bracket-match" *ngFor="let matchup of bracket.matchups; let index = index">
+                    <div class="matchup-title">
+                      <span>QF{{ index + 1 }}</span>
+                      <strong>{{ matchup.label }}</strong>
+                    </div>
+
+                    <ng-container *ngIf="matchup.top; else seedTopPending">
+                      <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.top }"></ng-container>
+                    </ng-container>
+                    <ng-template #seedTopPending>
+                      <div class="open-slot">Seed pending</div>
+                    </ng-template>
+
+                    <ng-container *ngIf="matchup.bottom; else seedBottomPending">
+                      <ng-container *ngTemplateOutlet="compactSeed; context: { $implicit: matchup.bottom }"></ng-container>
+                    </ng-container>
+                    <ng-template #seedBottomPending>
+                      <div class="open-slot">Seed pending</div>
+                    </ng-template>
+                  </article>
+                </section>
+              </div>
+            </ng-container>
 
             <details class="seed-details" *ngIf="bracket.seeds.length">
               <summary>Seed list and stats</summary>
@@ -459,10 +469,29 @@ import {
           </div>
 
           <div class="official-meta">
-            <span *ngIf="getGroupName(match.group)">{{ getGroupName(match.group) }}</span>
+            <span *ngIf="getMatchStageLabel(match)">{{ getMatchStageLabel(match) }}</span>
+            <span *ngIf="getMatchFormatLabel(match)">{{ getMatchFormatLabel(match) }}</span>
             <span>Ref: {{ match.referee_name || 'TBD' }}</span>
           </div>
         </article>
+      </ng-template>
+
+      <ng-template #officialBracketMatch let-match let-label="label">
+        <div class="matchup-title">
+          <span>{{ label }}</span>
+          <strong>{{ getMatchFormatLabel(match) || match.status }}</strong>
+        </div>
+        <div class="official-bracket-score">
+          <strong>{{ getTeamName(match.team_a) }}</strong>
+          <span>{{ match.score_a }} - {{ match.score_b }}</span>
+          <strong>{{ getTeamName(match.team_b) }}</strong>
+        </div>
+        <div class="official-meta">
+          <span>{{ match.status }}</span>
+          <span>{{ getCourtName(match) }}</span>
+          <span>{{ formatMatchTime(match.scheduled_time) }}</span>
+          <span>Ref: {{ match.referee_name || 'TBD' }}</span>
+        </div>
       </ng-template>
 
       <ng-template #teamSeed let-team>
@@ -487,7 +516,6 @@ import {
             <strong>{{ team.teamName }}</strong>
             <small>{{ team.groupName }} - Overall {{ team.overallRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
           </div>
-          <span class="advance-tag" *ngIf="winner?.teamId === team.teamId">Projected advance</span>
         </div>
       </ng-template>
 
@@ -670,6 +698,19 @@ import {
         margin: 0;
         color: var(--ink);
         font-size: 1rem;
+      }
+
+      .match-section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .match-section-heading span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
       }
 
       .standings-section,
@@ -1448,6 +1489,34 @@ import {
         text-align: center;
       }
 
+      .official-bracket-score {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .official-bracket-score strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 0.88rem;
+      }
+
+      .official-bracket-score strong:last-child {
+        text-align: right;
+      }
+
+      .official-bracket-score span {
+        padding: 0.24rem 0.45rem;
+        border-radius: 0.65rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--ink);
+        font-weight: 950;
+      }
+
       @media (min-width: 860px) {
         .match-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1488,6 +1557,25 @@ import {
           right: -0.55rem;
           width: 0.55rem;
           border-top: 1px solid rgba(20, 184, 166, 0.28);
+        }
+
+        .bracket-round:not(:last-child) .bracket-match::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: -0.8rem;
+          width: 0.8rem;
+          border-top: 1px solid rgba(20, 184, 166, 0.34);
+        }
+
+        .bracket-round:nth-child(1)::before,
+        .bracket-round:nth-child(2)::before {
+          content: "";
+          position: absolute;
+          top: 22%;
+          bottom: 22%;
+          right: -0.82rem;
+          border-right: 1px solid rgba(20, 184, 166, 0.24);
         }
 
         .bracket-round:nth-child(2) {
@@ -1564,6 +1652,18 @@ import {
           padding-inline: 0.42rem;
           font-size: 1.02rem;
         }
+
+        .bracket-round:not(:last-child) {
+          padding-bottom: 0.8rem;
+          border-bottom: 1px solid rgba(20, 184, 166, 0.16);
+        }
+
+        .bracket-round:not(:last-child)::after {
+          content: "↓";
+          justify-self: center;
+          color: var(--teal);
+          font-weight: 950;
+        }
       }
     `,
   ],
@@ -1583,6 +1683,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
   viewerError = '';
   activeTab: 'matches' | 'groups' | 'standings' | 'brackets' = 'matches';
   selectedBracket: PublicBracketKey = 'champions';
+  bracketMode: 'official' | 'seeding' = 'official';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
 
   constructor() {
@@ -1641,6 +1742,30 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   get activeBracketProjection(): BracketProjection {
     return this.progression.brackets[this.selectedBracket];
+  }
+
+  get matchSections(): { title: string; matches: Match[] }[] {
+    return [
+      { title: 'Pool Matches', matches: this.matches.filter((match) => this.isPoolMatch(match)) },
+      { title: 'Division A · Champions League', matches: this.matches.filter((match) => this.isChampionsMatch(match)) },
+      { title: 'Division B · Premier League', matches: this.matches.filter((match) => this.isPremierMatch(match)) },
+      { title: 'Independent / Other', matches: this.matches.filter((match) => this.isOtherMatch(match)) },
+    ];
+  }
+
+  get officialKnockoutMatches(): Match[] {
+    return this.matches.filter((match) =>
+      this.selectedBracket === 'champions' ? this.isChampionsMatch(match) : this.isPremierMatch(match)
+    );
+  }
+
+  get officialChampionName(): string {
+    const final = this.getOfficialRoundMatches('final')[0];
+    if (!final || final.status !== 'Completed' || !final.winner_team) {
+      return 'Champion TBD';
+    }
+
+    return getTeamName(this.teams, final.winner_team);
   }
 
   getTeamsForGroup(groupId?: number): Team[] {
@@ -1746,8 +1871,20 @@ export class TournamentViewerPageComponent implements OnDestroy {
     return getGroupName(this.groups, id);
   }
 
+  getMatchStageLabel(match: Match): string {
+    return getMatchStageLabel(match, this.groups);
+  }
+
+  getMatchFormatLabel(match: Match): string {
+    return getMatchFormatLabel(match);
+  }
+
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
+  }
+
+  getOfficialRoundMatches(stage: string): Match[] {
+    return this.officialKnockoutMatches.filter((match) => normalizeStage(match.stage) === stage);
   }
 
   getStandingTeamName(standing: Standing): string {
@@ -1764,5 +1901,21 @@ export class TournamentViewerPageComponent implements OnDestroy {
     }
 
     return `${standing.pool_type.charAt(0).toUpperCase()}${standing.pool_type.slice(1)} pool`;
+  }
+
+  private isPoolMatch(match: Match): boolean {
+    return match.match_type === 'league' && Boolean(match.group);
+  }
+
+  private isChampionsMatch(match: Match): boolean {
+    return match.match_type === 'knockout' && match.pool_type === 'premium';
+  }
+
+  private isPremierMatch(match: Match): boolean {
+    return match.match_type === 'knockout' && match.pool_type === 'star';
+  }
+
+  private isOtherMatch(match: Match): boolean {
+    return !this.isPoolMatch(match) && !this.isChampionsMatch(match) && !this.isPremierMatch(match);
   }
 }

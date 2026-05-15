@@ -20,6 +20,56 @@ export function getGroupName(groups: Group[], id?: number | null): string {
   return getById(groups, id)?.name ?? '';
 }
 
+export function getDivisionLabel(match: Match): string {
+  if (match.pool_type === 'premium') {
+    return 'Division A · Champions League';
+  }
+
+  if (match.pool_type === 'star') {
+    return 'Division B · Premier League';
+  }
+
+  return '';
+}
+
+export function getMatchStageLabel(match: Match, groups: Group[] = []): string {
+  const groupName = getGroupName(groups, match.group);
+  if (groupName) {
+    return groupName;
+  }
+
+  return getDivisionLabel(match);
+}
+
+export function getMatchFormatLabel(match: Match): string {
+  if (match.match_type !== 'knockout') {
+    return '';
+  }
+
+  const stage = normalizeStage(match.stage);
+  if (stage === 'final') {
+    return 'Final · Best of 3';
+  }
+
+  if (stage === 'semi_final') {
+    return 'Semi Final · Best of 1 to 25';
+  }
+
+  if (stage === 'third_place') {
+    return '3rd Place · Best of 1 to 21';
+  }
+
+  if (stage === 'quarter_final') {
+    return 'Quarterfinal · Best of 1 to 21';
+  }
+
+  return 'Knockout · Best of 1';
+}
+
+export function normalizeStage(stage?: string | null): string {
+  return (stage || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
 export function formatTournamentTime(value?: string | null): string {
   if (!value) {
     return 'Time TBD';

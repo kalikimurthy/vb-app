@@ -9,6 +9,8 @@ import {
   formatMatchTime,
   getCourtName,
   getGroupName,
+  getMatchFormatLabel,
+  getMatchStageLabel,
   getTeamName,
   getTournamentName,
 } from './match-display.helpers';
@@ -28,40 +30,49 @@ import {
         <div class="status-pill">{{ matches.length }} Matches</div>
       </header>
 
-      <section class="match-list">
-        <article class="panel match-card" *ngFor="let m of matches">
-          <div class="match-card-top">
-            <div>
-              <p class="kicker">{{ getTournamentName(m.tournament) }}</p>
-              <h3>{{ getTeamName(m.team_a) }} vs {{ getTeamName(m.team_b) }}</h3>
-            </div>
-            <span class="status-chip" [class.live]="m.status === 'Live'" [class.completed]="m.status === 'Completed'">
-              {{ m.status }}
-            </span>
+      <ng-container *ngFor="let section of matchSections">
+        <section class="match-section" *ngIf="section.matches.length">
+          <div class="section-heading">
+            <h3>{{ section.title }}</h3>
+            <span>{{ section.matches.length }} Matches</span>
           </div>
 
-          <div class="score-line">
-            <span>{{ getTeamName(m.team_a) }}</span>
-            <strong>{{ m.score_a }}</strong>
-          </div>
-          <div class="score-line">
-            <span>{{ getTeamName(m.team_b) }}</span>
-            <strong>{{ m.score_b }}</strong>
-          </div>
+          <div class="match-list">
+            <article class="panel match-card" *ngFor="let m of section.matches">
+              <div class="match-card-top">
+                <div>
+                  <p class="kicker">{{ getTournamentName(m.tournament) }}</p>
+                  <h3>{{ getTeamName(m.team_a) }} vs {{ getTeamName(m.team_b) }}</h3>
+                </div>
+                <span class="status-chip" [class.live]="m.status === 'Live'" [class.completed]="m.status === 'Completed'">
+                  {{ m.status }}
+                </span>
+              </div>
 
-          <div class="meta-row">
-            <span>{{ getCourtName(m) }}</span>
-            <span>{{ formatMatchTime(m.scheduled_time) }}</span>
-            <span *ngIf="getGroupName(m.group)">{{ getGroupName(m.group) }}</span>
-            <span>Ref: {{ m.referee_name || 'TBD' }}</span>
-            <span>{{ m.stage }}</span>
-          </div>
+              <div class="score-line">
+                <span>{{ getTeamName(m.team_a) }}</span>
+                <strong>{{ m.score_a }}</strong>
+              </div>
+              <div class="score-line">
+                <span>{{ getTeamName(m.team_b) }}</span>
+                <strong>{{ m.score_b }}</strong>
+              </div>
 
-          <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
-            Score Match
-          </a>
-        </article>
-      </section>
+              <div class="meta-row">
+                <span>{{ getCourtName(m) }}</span>
+                <span>{{ formatMatchTime(m.scheduled_time) }}</span>
+                <span *ngIf="getMatchStageLabel(m)">{{ getMatchStageLabel(m) }}</span>
+                <span *ngIf="getMatchFormatLabel(m)">{{ getMatchFormatLabel(m) }}</span>
+                <span>Ref: {{ m.referee_name || 'TBD' }}</span>
+              </div>
+
+              <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
+                Score Match
+              </a>
+            </article>
+          </div>
+        </section>
+      </ng-container>
 
       <section class="panel create-panel">
         <h3>Create Match</h3>
@@ -93,6 +104,29 @@ import {
       .match-list {
         display: grid;
         gap: 0.75rem;
+      }
+
+      .match-section {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .section-heading h3 {
+        margin: 0;
+        color: var(--ink);
+      }
+
+      .section-heading span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
       }
 
       .match-card {
@@ -251,6 +285,15 @@ export class MatchesPageComponent {
     this.load();
   }
 
+  get matchSections(): { title: string; matches: Match[] }[] {
+    return [
+      { title: 'Pool Matches', matches: this.matches.filter((match) => this.isPoolMatch(match)) },
+      { title: 'Division A · Champions League', matches: this.matches.filter((match) => this.isChampionsMatch(match)) },
+      { title: 'Division B · Premier League', matches: this.matches.filter((match) => this.isPremierMatch(match)) },
+      { title: 'Independent / Other', matches: this.matches.filter((match) => this.isOtherMatch(match)) },
+    ];
+  }
+
   load(): void {
     this.api.list<Tournament>('tournaments').subscribe((r) => {
       this.tournaments = r.results;
@@ -314,6 +357,14 @@ export class MatchesPageComponent {
     return getGroupName(this.groups, id);
   }
 
+  getMatchStageLabel(match: Match): string {
+    return getMatchStageLabel(match, this.groups);
+  }
+
+  getMatchFormatLabel(match: Match): string {
+    return getMatchFormatLabel(match);
+  }
+
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
   }
@@ -332,5 +383,21 @@ export class MatchesPageComponent {
     }
 
     return 'Request failed. Check that the backend is running and the match form is valid.';
+  }
+
+  private isPoolMatch(match: Match): boolean {
+    return match.match_type === 'league' && Boolean(match.group);
+  }
+
+  private isChampionsMatch(match: Match): boolean {
+    return match.match_type === 'knockout' && match.pool_type === 'premium';
+  }
+
+  private isPremierMatch(match: Match): boolean {
+    return match.match_type === 'knockout' && match.pool_type === 'star';
+  }
+
+  private isOtherMatch(match: Match): boolean {
+    return !this.isPoolMatch(match) && !this.isChampionsMatch(match) && !this.isPremierMatch(match);
   }
 }

@@ -81,7 +81,7 @@ export const PUBLIC_PROGRESSION_CONFIG = {
   brackets: [
     {
       key: 'champions',
-      name: 'Champions League',
+      name: 'Division A · Champions League',
       qualifyingRankRange: [1, 8],
       description: 'Overall pool-stage ranks 1-8',
       bracketSize: 8,
@@ -98,7 +98,7 @@ export const PUBLIC_PROGRESSION_CONFIG = {
       thirdPlaceEnabled: true,
       projectionStrategy: 'better-seed',
       matchFormat: {
-        label: 'Official projected knockout path',
+        label: 'Official knockout format',
         quarterFinal: 'Quarter Final: 1 set, 21-point hard stop',
         semifinal: 'Semi Finals: 1 set, 25-point hard stop',
         thirdPlace: '3rd Place: 1 set, 21-point hard stop',
@@ -107,7 +107,7 @@ export const PUBLIC_PROGRESSION_CONFIG = {
     },
     {
       key: 'premier',
-      name: 'Premier League',
+      name: 'Division B · Premier League',
       qualifyingRankRange: [9, 16],
       description: 'Overall pool-stage ranks 9-16',
       bracketSize: 8,
@@ -124,7 +124,7 @@ export const PUBLIC_PROGRESSION_CONFIG = {
       thirdPlaceEnabled: true,
       projectionStrategy: 'better-seed',
       matchFormat: {
-        label: 'Official projected knockout path',
+        label: 'Official knockout format',
         quarterFinal: 'Quarter Final: 1 set, 21-point hard stop',
         semifinal: 'Semi Finals: 1 set, 25-point hard stop',
         thirdPlace: '3rd Place: 1 set, 21-point hard stop',

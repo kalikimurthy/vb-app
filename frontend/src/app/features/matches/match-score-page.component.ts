@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
@@ -8,6 +9,8 @@ import {
   formatMatchTime,
   getCourtName,
   getGroupName,
+  getMatchFormatLabel,
+  getMatchStageLabel,
   getTeamName,
   getTournamentName,
 } from './match-display.helpers';
@@ -15,11 +18,9 @@ import {
 @Component({
   selector: 'app-match-score-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <article class="score-page" *ngIf="match; else loading">
-      <a [routerLink]="backLink" class="back-link">Back to {{ backLabel }}</a>
-
       <section class="panel match-panel">
         <div class="match-meta">
           <span class="status-chip" [class.live]="match.status === 'Live'" [class.completed]="match.status === 'Completed'">
@@ -28,54 +29,53 @@ import {
           <span>{{ getTournamentName(match.tournament) }}</span>
           <span>{{ getCourtName(match) }}</span>
           <span>{{ formatMatchTime(match.scheduled_time) }}</span>
-          <span *ngIf="getGroupName(match.group)">{{ getGroupName(match.group) }}</span>
+          <span *ngIf="getMatchStageLabel(match)">{{ getMatchStageLabel(match) }}</span>
+          <span *ngIf="getMatchFormatLabel(match)">{{ getMatchFormatLabel(match) }}</span>
           <span>Ref: {{ match.referee_name || 'TBD' }}</span>
         </div>
 
         <div class="scoreboard">
           <div class="team-score">
             <strong>{{ getTeamName(match.team_a) }}</strong>
-            <span>{{ scoreA }}</span>
-            <div class="score-controls">
-              <button type="button" class="score-btn" (click)="changeScore('A', -1)">-</button>
-              <button type="button" class="score-btn" (click)="changeScore('A', 1)">+</button>
-            </div>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="0"
+              name="scoreA"
+              [(ngModel)]="scoreA"
+              (ngModelChange)="onScoreInput('A', $event)"
+              aria-label="Team A score"
+            />
           </div>
 
           <div class="versus">VS</div>
 
           <div class="team-score">
             <strong>{{ getTeamName(match.team_b) }}</strong>
-            <span>{{ scoreB }}</span>
-            <div class="score-controls">
-              <button type="button" class="score-btn" (click)="changeScore('B', -1)">-</button>
-              <button type="button" class="score-btn" (click)="changeScore('B', 1)">+</button>
-            </div>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="0"
+              name="scoreB"
+              [(ngModel)]="scoreB"
+              (ngModelChange)="onScoreInput('B', $event)"
+              aria-label="Team B score"
+            />
           </div>
         </div>
 
-        <div class="status-actions">
-          <button type="button" class="secondary" [class.selected]="status === 'Scheduled'" (click)="status = 'Scheduled'">
-            Scheduled
-          </button>
-          <button type="button" class="secondary" [class.selected]="status === 'Live'" (click)="status = 'Live'">
-            Live
-          </button>
-          <button type="button" class="secondary" [class.selected]="status === 'Completed'" (click)="status = 'Completed'">
-            Completed
-          </button>
+        <div class="autosave-row" [class.saving]="autosaveStatus === 'Saving...'" [class.failed]="autosaveStatus === 'Failed to save'">
+          {{ autosaveStatus }}
         </div>
 
         <div class="action-row">
           <button type="button" class="live-button" (click)="markLive()" [disabled]="isSaving">
-            Mark Live
-          </button>
-          <button type="button" (click)="saveScore()" [disabled]="isSaving">
-            {{ isSaving ? 'Saving...' : 'Save Score' }}
+            {{ status === 'Live' ? 'Mark Live' : 'Start Live' }}
           </button>
           <button type="button" class="complete-button" (click)="completeMatch()" [disabled]="isSaving">
             Complete Match
           </button>
+          <a [routerLink]="backLink" class="back-button">Back</a>
         </div>
 
         <p *ngIf="message" class="success">{{ message }}</p>
@@ -94,13 +94,6 @@ import {
       .score-page {
         display: grid;
         gap: 1rem;
-      }
-
-      .back-link {
-        justify-self: start;
-        text-decoration: none;
-        color: var(--teal);
-        font-weight: 900;
       }
 
       .match-panel {
@@ -160,7 +153,13 @@ import {
         font-size: 1.05rem;
       }
 
-      .team-score span {
+      .team-score input {
+        width: 100%;
+        min-height: 5.4rem;
+        padding: 0.35rem;
+        border-radius: 1rem;
+        border-color: rgba(20, 184, 166, 0.24);
+        background: rgba(15, 23, 42, 0.56);
         color: var(--ink);
         font-size: clamp(3rem, 12vw, 5.6rem);
         font-weight: 950;
@@ -168,18 +167,10 @@ import {
         text-align: center;
       }
 
-      .score-controls {
-        display: flex;
-        gap: 0.6rem;
-        min-width: 0;
-      }
-
-      .score-btn {
-        flex: 1 1 0;
-        width: auto;
-        min-width: 0;
-        min-height: 3.1rem;
-        font-size: 1.35rem;
+      .team-score input::-webkit-outer-spin-button,
+      .team-score input::-webkit-inner-spin-button {
+        margin: 0;
+        appearance: none;
       }
 
       .versus {
@@ -191,15 +182,24 @@ import {
         text-align: center;
       }
 
-      .status-actions,
       .action-row {
         display: grid;
         gap: 0.6rem;
       }
 
-      .status-actions .selected {
-        border-color: rgba(20, 184, 166, 0.44);
-        background: rgba(20, 184, 166, 0.16);
+      .autosave-row {
+        min-height: 1.6rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+
+      .autosave-row.saving {
+        color: #bfdbfe;
+      }
+
+      .autosave-row.failed {
+        color: #fecaca;
       }
 
       .complete-button {
@@ -210,6 +210,19 @@ import {
         background: linear-gradient(135deg, #f59e0b, var(--teal));
       }
 
+      .back-button {
+        display: grid;
+        place-items: center;
+        min-height: 2.75rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.1);
+        color: var(--ink);
+        font-weight: 850;
+        text-decoration: none;
+      }
+
       @media (min-width: 760px) {
         .scoreboard {
           grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1fr);
@@ -218,10 +231,6 @@ import {
 
         .versus {
           display: block;
-        }
-
-        .status-actions {
-          grid-template-columns: repeat(3, 1fr);
         }
 
         .action-row {
@@ -246,8 +255,10 @@ export class MatchScorePageComponent {
   isSaving = false;
   message = '';
   error = '';
+  autosaveStatus = 'Saved';
   backLink = '/matches';
   backLabel = 'matches';
+  private autosaveTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     this.loadReferenceData();
@@ -277,30 +288,31 @@ export class MatchScorePageComponent {
         this.scoreA = match.score_a;
         this.scoreB = match.score_b;
         this.status = match.status;
+        this.autosaveStatus = 'Saved';
       },
       error: (err) => (this.error = this.formatApiError(err)),
     });
   }
 
-  changeScore(team: 'A' | 'B', delta: number): void {
+  onScoreInput(team: 'A' | 'B', value: number | string): void {
+    const nextScore = this.normalizeScore(value);
     if (team === 'A') {
-      this.scoreA = Math.max(0, this.scoreA + delta);
-      return;
+      this.scoreA = nextScore;
+    } else {
+      this.scoreB = nextScore;
     }
 
-    this.scoreB = Math.max(0, this.scoreB + delta);
-  }
-
-  saveScore(): void {
-    this.persistScore(this.status, 'Score saved.');
+    this.scheduleAutosave();
   }
 
   markLive(): void {
+    this.clearAutosaveTimer();
     this.status = 'Live';
     this.persistScore('Live', 'Match marked live.');
   }
 
   completeMatch(): void {
+    this.clearAutosaveTimer();
     this.status = 'Completed';
     this.persistScore('Completed', 'Match completed.');
   }
@@ -321,6 +333,14 @@ export class MatchScorePageComponent {
     return getGroupName(this.groups, id);
   }
 
+  getMatchStageLabel(match: Match): string {
+    return getMatchStageLabel(match, this.groups);
+  }
+
+  getMatchFormatLabel(match: Match): string {
+    return getMatchFormatLabel(match);
+  }
+
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
   }
@@ -332,6 +352,7 @@ export class MatchScorePageComponent {
     }
 
     this.isSaving = true;
+    this.autosaveStatus = 'Saving...';
     this.message = '';
     this.error = '';
 
@@ -348,13 +369,43 @@ export class MatchScorePageComponent {
           this.scoreB = match.score_b;
           this.status = match.status;
           this.message = successMessage;
+          this.autosaveStatus = 'Saved';
           this.isSaving = false;
         },
         error: (err) => {
           this.error = this.formatApiError(err);
+          this.autosaveStatus = 'Failed to save';
           this.isSaving = false;
         },
       });
+  }
+
+  private scheduleAutosave(): void {
+    if (!this.match?.id) {
+      return;
+    }
+
+    this.clearAutosaveTimer();
+    this.autosaveStatus = 'Saving...';
+    this.autosaveTimer = setTimeout(() => {
+      this.persistScore(this.status, 'Score autosaved.');
+    }, 650);
+  }
+
+  private clearAutosaveTimer(): void {
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = undefined;
+    }
+  }
+
+  private normalizeScore(value: number | string): number {
+    const parsed = Number(value);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return 0;
+    }
+
+    return Math.floor(parsed);
   }
 
   private formatApiError(err: unknown): string {
