@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -15,6 +16,7 @@ from apps.tournaments.models import Tournament, TournamentFormat, TournamentStat
 
 
 DEMO_TOURNAMENT_NAME = "TANA Atlanta Volleyball 2026 Demo"
+EASTERN_TZ = ZoneInfo("America/New_York")
 
 GROUP_TEAMS = {
     "Group 1": [
@@ -91,6 +93,10 @@ SCORES_BY_GROUP = {
     "Group 5": [(18, 21), (15, 21), (21, 19), (21, 14), (16, 21), (21, 17)],
 }
 
+
+
+
+
 TEAM_ALIASES = {
     "vikings": "VIKINGS",
     "cloudq alpharetta one": "CloudQ Alpharetta",
@@ -104,7 +110,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         Tournament.objects.filter(name=DEMO_TOURNAMENT_NAME).delete()
 
-        tournament_date = timezone.localdate() + timedelta(days=30)
+        tournament_date = timezone.localdate(timezone=EASTERN_TZ) + timedelta(days=30)
         tournament = Tournament.objects.create(
             name=DEMO_TOURNAMENT_NAME,
             date=tournament_date,
@@ -206,7 +212,7 @@ class Command(BaseCommand):
 
     def _scheduled_datetime(self, tournament_date, time_label):
         parsed_time = datetime.strptime(time_label, "%I:%M%p").time()
-        return timezone.make_aware(datetime.combine(tournament_date, parsed_time))
+        return timezone.make_aware(datetime.combine(tournament_date, parsed_time), EASTERN_TZ)
 
     def _normalize_team(self, value):
         key = " ".join(value.strip().lower().split())

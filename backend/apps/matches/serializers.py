@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from apps.matches.models import Match
-from apps.matches.services.court_conflicts import has_court_conflict
 
 
 class MatchSerializer(serializers.ModelSerializer):
@@ -22,9 +21,6 @@ class MatchSerializer(serializers.ModelSerializer):
             for k in ["team_a", "team_b", "stage", "pool_type", "best_of", "scheduled_time", "court", "manual_match"]
         ):
             raise serializers.ValidationError("Bracket is locked. Only score/status updates are allowed.")
-
-        if has_court_conflict(match=current):
-            raise serializers.ValidationError("Court scheduling conflict detected within configured buffer.")
 
         try:
             current.clean()
