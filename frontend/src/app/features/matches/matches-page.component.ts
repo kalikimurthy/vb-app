@@ -74,13 +74,68 @@ import {
                 <span>Ref: {{ m.referee_name || 'TBD' }}</span>
               </div>
 
-              <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
-                Score Match
-              </a>
+              <div class="card-actions">
+                <button type="button" class="edit-link" (click)="startEdit(m)">Edit Match</button>
+                <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
+                  Score Match
+                </a>
+              </div>
             </article>
           </div>
         </section>
       </ng-container>
+
+      <section class="panel edit-panel" *ngIf="editForm">
+        <div class="panel-title-row">
+          <div>
+            <p class="kicker">Admin edit</p>
+            <h3>Edit Match</h3>
+          </div>
+          <button type="button" class="edit-link subtle" (click)="cancelEdit()">Close</button>
+        </div>
+
+        <form class="create-grid" (ngSubmit)="saveEdit()">
+          <select [(ngModel)]="editForm.tournament" name="editTournament">
+            <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
+          </select>
+          <select [(ngModel)]="editForm.match_type" name="editMatchType">
+            <option value="league">Pool / group stage</option>
+            <option value="knockout">Knockout</option>
+          </select>
+          <input [(ngModel)]="editForm.stage" name="editStage" placeholder="stage (league, quarter_final_1, final)" />
+          <select [(ngModel)]="editForm.group" name="editGroup">
+            <option [ngValue]="null">No Group</option>
+            <option *ngFor="let g of groups" [ngValue]="g.id">{{ g.name }}</option>
+          </select>
+          <select [(ngModel)]="editForm.team_a" name="editTeamA">
+            <option [ngValue]="null">Team A</option>
+            <option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option>
+          </select>
+          <select [(ngModel)]="editForm.team_b" name="editTeamB">
+            <option [ngValue]="null">Team B</option>
+            <option *ngFor="let t of teams" [ngValue]="t.id">{{ t.name }}</option>
+          </select>
+          <select [(ngModel)]="editForm.court" name="editCourt">
+            <option [ngValue]="null">Court</option>
+            <option *ngFor="let c of courts" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+          <input [(ngModel)]="editForm.scheduled_time" name="editScheduledTime" type="datetime-local" />
+          <input [(ngModel)]="editForm.referee_name" name="editRefereeName" placeholder="Referee / ref team" />
+          <select [(ngModel)]="editForm.pool_type" name="editPoolType">
+            <option value="none">No knockout division</option>
+            <option value="premium">Division A · Champions League</option>
+            <option value="star">Division B · Premier League</option>
+          </select>
+          <select [(ngModel)]="editForm.status" name="editStatus">
+            <option value="Scheduled">Scheduled</option>
+            <option value="Live">Live</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <button type="submit" [disabled]="isUpdating">{{ isUpdating ? 'Saving...' : 'Save Match Changes' }}</button>
+        </form>
+        <p *ngIf="editSuccess" class="success">{{ editSuccess }}</p>
+        <p *ngIf="editError" class="error">{{ editError }}</p>
+      </section>
 
       <section class="panel create-panel">
         <h3>Create Match</h3>
@@ -262,6 +317,45 @@ import {
         text-decoration: none;
       }
 
+      .card-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.55rem;
+      }
+
+      .edit-link {
+        min-height: 2.75rem;
+        padding: 0.78rem 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.9rem;
+        background: rgba(15, 23, 42, 0.48);
+        color: var(--ink);
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .edit-link.subtle {
+        min-height: 2.35rem;
+        padding: 0.55rem 0.8rem;
+      }
+
+      .edit-panel {
+        padding: 0.95rem;
+        border-color: rgba(20, 184, 166, 0.22);
+      }
+
+      .panel-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .panel-title-row h3 {
+        margin: 0.15rem 0 0;
+      }
+
       .create-panel {
         padding: 0.95rem;
       }
@@ -279,6 +373,10 @@ import {
         .create-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .card-actions {
+          grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        }
       }
     `,
   ],
@@ -293,10 +391,14 @@ export class MatchesPageComponent {
   matches: Match[] = [];
   isCreating = false;
   isGeneratingKnockout = false;
+  isUpdating = false;
   createError = '';
   createSuccess = '';
+  editError = '';
+  editSuccess = '';
   knockoutError = '';
   knockoutSuccess = '';
+  editForm: Match | null = null;
 
   form: Match = {
     tournament: 0,
@@ -402,6 +504,65 @@ export class MatchesPageComponent {
     });
   }
 
+  startEdit(match: Match): void {
+    this.editError = '';
+    this.editSuccess = '';
+    this.editForm = {
+      ...match,
+      scheduled_time: this.toDateTimeLocal(match.scheduled_time),
+    };
+  }
+
+  cancelEdit(): void {
+    this.editForm = null;
+    this.editError = '';
+    this.editSuccess = '';
+  }
+
+  saveEdit(): void {
+    this.editError = '';
+    this.editSuccess = '';
+
+    if (!this.editForm?.id) {
+      this.editError = 'Select a match before saving.';
+      return;
+    }
+
+    if (!this.editForm.tournament) {
+      this.editError = 'Tournament is required.';
+      return;
+    }
+
+    if (this.editForm.team_a && this.editForm.team_b && this.editForm.team_a === this.editForm.team_b) {
+      this.editError = 'A match needs two different teams.';
+      return;
+    }
+
+    const payload: Match = {
+      ...this.editForm,
+      group: this.editForm.match_type === 'knockout' ? null : this.editForm.group,
+      pool_type: this.editForm.match_type === 'league' ? 'none' : this.editForm.pool_type,
+      stage: this.editForm.stage || (this.editForm.match_type === 'league' ? 'league' : 'quarter_final_1'),
+    };
+
+    this.isUpdating = true;
+    this.api.update<Match>('matches', this.editForm.id, payload).subscribe({
+      next: (match) => {
+        this.editSuccess = 'Match updated.';
+        this.editForm = {
+          ...match,
+          scheduled_time: this.toDateTimeLocal(match.scheduled_time),
+        };
+        this.isUpdating = false;
+        this.load();
+      },
+      error: (err) => {
+        this.editError = this.formatApiError(err);
+        this.isUpdating = false;
+      },
+    });
+  }
+
   getTournamentName(id?: number | null): string {
     return getTournamentName(this.tournaments, id);
   }
@@ -460,5 +621,14 @@ export class MatchesPageComponent {
 
   private isOtherMatch(match: Match): boolean {
     return !this.isPoolMatch(match) && !this.isChampionsMatch(match) && !this.isPremierMatch(match);
+  }
+
+  private toDateTimeLocal(value?: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+    return match ? `${match[1]}T${match[2]}` : value;
   }
 }
