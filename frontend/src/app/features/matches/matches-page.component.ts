@@ -38,6 +38,24 @@ import {
       <p *ngIf="knockoutSuccess" class="success">{{ knockoutSuccess }}</p>
       <p *ngIf="knockoutError" class="error">{{ knockoutError }}</p>
 
+      <section class="filter-panel" aria-label="Match filters">
+        <div class="filter-summary">
+          <p class="kicker">Match filters</p>
+          <strong>Showing {{ filteredMatches.length }} of {{ matches.length }} matches</strong>
+        </div>
+
+        <div class="filter-bar">
+          <button
+            type="button"
+            *ngFor="let filter of filterOptions"
+            [class.active]="activeFilter === filter.value"
+            (click)="activeFilter = filter.value"
+          >
+            {{ filter.label }}
+          </button>
+        </div>
+      </section>
+
       <ng-container *ngFor="let section of matchSections">
         <section class="match-section" *ngIf="section.matches.length">
           <div class="section-heading">
@@ -176,6 +194,56 @@ import {
       .match-list {
         display: grid;
         gap: 0.75rem;
+      }
+
+      .filter-panel {
+        display: grid;
+        gap: 0.75rem;
+        padding: 0.85rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.48);
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .filter-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .filter-summary strong {
+        color: var(--ink);
+        font-size: 0.9rem;
+      }
+
+      .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .filter-bar button {
+        min-height: 2.45rem;
+        padding: 0.55rem 0.72rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.5);
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+
+      .filter-bar button.active {
+        border-color: rgba(20, 184, 166, 0.4);
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.34), rgba(20, 184, 166, 0.22)),
+          rgba(15, 23, 42, 0.54);
+        color: var(--ink);
       }
 
       .hero-actions {
@@ -408,6 +476,16 @@ export class MatchesPageComponent {
   knockoutError = '';
   knockoutSuccess = '';
   editForm: Match | null = null;
+  activeFilter: MatchFilter = 'all';
+  filterOptions: { value: MatchFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'pool', label: 'Pool Matches' },
+    { value: 'champions', label: 'Division A · Champions League' },
+    { value: 'premier', label: 'Division B · Premier League' },
+    { value: 'live', label: 'Live' },
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'completed', label: 'Completed' },
+  ];
   stageOptions = [
     { value: 'league', label: 'Pool / group stage' },
     { value: 'quarter_final_1', label: 'Quarterfinal 1' },
@@ -444,11 +522,43 @@ export class MatchesPageComponent {
 
   get matchSections(): { title: string; matches: Match[] }[] {
     return [
-      { title: 'Pool Matches', matches: this.matches.filter((match) => this.isPoolMatch(match)) },
-      { title: 'Division A · Champions League', matches: this.matches.filter((match) => this.isChampionsMatch(match)) },
-      { title: 'Division B · Premier League', matches: this.matches.filter((match) => this.isPremierMatch(match)) },
-      { title: 'Independent / Other', matches: this.matches.filter((match) => this.isOtherMatch(match)) },
+      { title: 'Pool Matches', matches: this.filteredMatches.filter((match) => this.isPoolMatch(match)) },
+      { title: 'Division A · Champions League', matches: this.filteredMatches.filter((match) => this.isChampionsMatch(match)) },
+      { title: 'Division B · Premier League', matches: this.filteredMatches.filter((match) => this.isPremierMatch(match)) },
+      { title: 'Independent / Other', matches: this.filteredMatches.filter((match) => this.isOtherMatch(match)) },
     ];
+  }
+
+  get filteredMatches(): Match[] {
+    return this.matches
+      .filter((match) => {
+        if (this.activeFilter === 'pool') {
+          return this.isPoolMatch(match);
+        }
+
+        if (this.activeFilter === 'champions') {
+          return this.isChampionsMatch(match);
+        }
+
+        if (this.activeFilter === 'premier') {
+          return this.isPremierMatch(match);
+        }
+
+        if (this.activeFilter === 'live') {
+          return match.status === 'Live';
+        }
+
+        if (this.activeFilter === 'scheduled') {
+          return match.status === 'Scheduled';
+        }
+
+        if (this.activeFilter === 'completed') {
+          return match.status === 'Completed';
+        }
+
+        return true;
+      })
+      .sort((a, b) => this.compareMatches(a, b));
   }
 
   load(): void {
@@ -655,6 +765,56 @@ export class MatchesPageComponent {
     return !this.isPoolMatch(match) && !this.isChampionsMatch(match) && !this.isPremierMatch(match);
   }
 
+  private compareMatches(a: Match, b: Match): number {
+    return (
+      this.statusPriority(a.status) - this.statusPriority(b.status) ||
+      this.stagePriority(a) - this.stagePriority(b) ||
+      this.timeValue(a.scheduled_time) - this.timeValue(b.scheduled_time) ||
+      (a.id || 0) - (b.id || 0)
+    );
+  }
+
+  private statusPriority(status: Match['status']): number {
+    if (status === 'Live') {
+      return 0;
+    }
+
+    if (status === 'Scheduled') {
+      return 1;
+    }
+
+    return 2;
+  }
+
+  private stagePriority(match: Match): number {
+    if (this.isPoolMatch(match)) {
+      return 0;
+    }
+
+    const order = [
+      'quarter_final_1',
+      'quarter_final_2',
+      'quarter_final_3',
+      'quarter_final_4',
+      'semi_final_1',
+      'semi_final_2',
+      'third_place',
+      'final',
+    ];
+
+    const index = order.indexOf(match.stage);
+    return index >= 0 ? index : order.length;
+  }
+
+  private timeValue(value?: string | null): number {
+    const match = value?.match(/T(\d{2}):(\d{2})/);
+    if (!match) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    return Number(match[1]) * 60 + Number(match[2]);
+  }
+
   private toDateTimeLocal(value?: string | null): string | null {
     if (!value) {
       return null;
@@ -664,3 +824,5 @@ export class MatchesPageComponent {
     return match ? `${match[1]}T${match[2]}` : value;
   }
 }
+
+type MatchFilter = 'all' | 'pool' | 'champions' | 'premier' | 'live' | 'scheduled' | 'completed';
