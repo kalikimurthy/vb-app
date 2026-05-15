@@ -279,108 +279,104 @@ import {
               <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds</span>
             </div>
 
-            <div class="bracket-board official-board" *ngIf="bracketMode === 'official'">
-              <section class="bracket-round">
+            <div class="bracket-board official-board bracket-arena" *ngIf="bracketMode === 'official'">
+              <section class="bracket-lane qf-lane left-lane">
                 <div class="round-heading">
                   <span>Round 1</span>
                   <h4>Quarterfinals</h4>
                 </div>
 
-                <ng-container *ngIf="getOfficialRoundMatches('quarter_final').length; else qfPlaceholders">
-                  <article class="bracket-match" *ngFor="let officialMatch of getOfficialRoundMatches('quarter_final'); let index = index">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'QF' + (index + 1) }"></ng-container>
-                  </article>
-                </ng-container>
-                <ng-template #qfPlaceholders>
-                  <article class="bracket-match" *ngFor="let matchup of bracket.matchups; let index = index">
-                    <div class="matchup-title">
-                      <span>QF{{ index + 1 }}</span>
-                      <strong>{{ matchup.label }}</strong>
-                    </div>
-                    <div class="open-slot">? vs ?</div>
-                  </article>
-                </ng-template>
+                <article class="bracket-match connector-right" *ngFor="let slot of leftQuarterfinalSlots">
+                  <ng-container *ngIf="getOfficialMatch(slot.stage) as officialMatch; else officialPlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: slot.label }"></ng-container>
+                  </ng-container>
+                  <ng-template #officialPlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: slot.label, title: slot.title, body: slot.body, format: slot.format }"></ng-container>
+                  </ng-template>
+                </article>
               </section>
 
-              <section class="bracket-round">
+              <section class="bracket-lane sf-lane left-lane">
                 <div class="round-heading">
                   <span>Round 2</span>
                   <h4>Semifinals</h4>
                 </div>
 
-                <ng-container *ngIf="getOfficialRoundMatches('semi_final').length; else sfPlaceholders">
-                  <article class="bracket-match projected-match" *ngFor="let officialMatch of getOfficialRoundMatches('semi_final'); let index = index">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF' + (index + 1) }"></ng-container>
-                  </article>
-                </ng-container>
-                <ng-template #sfPlaceholders>
-                  <article class="bracket-match projected-match">
-                    <div class="matchup-title">
-                      <span>SF1</span>
-                      <strong>Winner QF1 vs Winner QF2</strong>
-                    </div>
-                    <div class="projected-slot">Winner QF1 vs Winner QF2</div>
-                  </article>
-                  <article class="bracket-match projected-match">
-                    <div class="matchup-title">
-                      <span>SF2</span>
-                      <strong>Winner QF3 vs Winner QF4</strong>
-                    </div>
-                    <div class="projected-slot">Winner QF3 vs Winner QF4</div>
-                  </article>
-                </ng-template>
+                <article class="bracket-match connector-right connector-left">
+                  <ng-container *ngIf="getOfficialMatch('semi_final_1') as officialMatch; else sfOnePlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF1' }"></ng-container>
+                  </ng-container>
+                  <ng-template #sfOnePlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF1', title: 'Winner QF1 vs Winner QF2', body: 'Winner QF1 vs Winner QF2', format: 'Best of 1' }"></ng-container>
+                  </ng-template>
+                </article>
               </section>
 
-              <section class="bracket-round">
-                <div class="round-heading">
-                  <span>Round 3</span>
-                  <h4>3rd Place</h4>
-                </div>
-
-                <article class="bracket-match projected-match" *ngIf="getOfficialRoundMatches('third_place')[0] as officialThird; else thirdPlacePlaceholder">
-                  <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialThird, label: '3rd Place' }"></ng-container>
-                </article>
-                <ng-template #thirdPlacePlaceholder>
-                <article class="bracket-match projected-match">
-                  <div class="matchup-title">
-                    <span>Loser SF1 vs Loser SF2</span>
-                    <strong>Official result pending</strong>
-                  </div>
-                  <div class="projected-slot">Loser SF1 vs Loser SF2</div>
-                </article>
-                </ng-template>
-              </section>
-
-              <section class="bracket-round">
-                <div class="round-heading">
-                  <span>Round 4</span>
+              <section class="bracket-center-lane">
+                <div class="round-heading center-heading">
+                  <span>Championship path</span>
                   <h4>Final</h4>
                 </div>
 
-                <article class="bracket-match projected-match final-match" *ngIf="getOfficialRoundMatches('final')[0] as officialFinal; else finalPlaceholder">
-                  <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialFinal, label: 'Final' }"></ng-container>
+                <article class="bracket-match final-match center-final">
+                  <ng-container *ngIf="getOfficialMatch('final') as officialMatch; else finalPlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'F' }"></ng-container>
+                  </ng-container>
+                  <ng-template #finalPlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'F', title: 'Winner SF1 vs Winner SF2', body: 'Winner SF1 vs Winner SF2', format: 'Best of 3' }"></ng-container>
+                  </ng-template>
                 </article>
-                <ng-template #finalPlaceholder>
-                <article class="bracket-match projected-match final-match">
-                  <div class="matchup-title">
-                    <span>Final</span>
-                    <strong>Final · Best of 3</strong>
-                  </div>
-                  <div class="projected-slot">Winner SF1 vs Winner SF2</div>
-                </article>
-                </ng-template>
-              </section>
 
-              <section class="bracket-round champion-round">
-                <div class="round-heading">
-                  <span>Finish</span>
-                  <h4>Champion</h4>
-                </div>
-
-                <article class="champion-card">
+                <article class="champion-card compact-champion">
                   <span class="projected-badge">Champion TBD</span>
                   <strong>{{ officialChampionName }}</strong>
                   <small>{{ officialChampionName === 'Champion TBD' ? 'Champion appears after the official final is completed.' : 'Official final completed.' }}</small>
+                </article>
+
+                <div class="round-heading center-heading third-heading">
+                  <span>Placement</span>
+                  <h4>3rd Place Match</h4>
+                </div>
+
+                <article class="bracket-match third-place-match">
+                  <ng-container *ngIf="getOfficialMatch('third_place') as officialMatch; else thirdPlacePlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: '3RD' }"></ng-container>
+                  </ng-container>
+                  <ng-template #thirdPlacePlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: '3RD', title: 'Loser SF1 vs Loser SF2', body: 'Loser SF1 vs Loser SF2', format: 'Best of 1' }"></ng-container>
+                  </ng-template>
+                </article>
+              </section>
+
+              <section class="bracket-lane sf-lane right-lane">
+                <div class="round-heading">
+                  <span>Round 2</span>
+                  <h4>Semifinals</h4>
+                </div>
+
+                <article class="bracket-match connector-left">
+                  <ng-container *ngIf="getOfficialMatch('semi_final_2') as officialMatch; else sfTwoPlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF2' }"></ng-container>
+                  </ng-container>
+                  <ng-template #sfTwoPlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF2', title: 'Winner QF3 vs Winner QF4', body: 'Winner QF3 vs Winner QF4', format: 'Best of 1' }"></ng-container>
+                  </ng-template>
+                </article>
+              </section>
+
+              <section class="bracket-lane qf-lane right-lane">
+                <div class="round-heading">
+                  <span>Round 1</span>
+                  <h4>Quarterfinals</h4>
+                </div>
+
+                <article class="bracket-match connector-left" *ngFor="let slot of rightQuarterfinalSlots">
+                  <ng-container *ngIf="getOfficialMatch(slot.stage) as officialMatch; else officialPlaceholder">
+                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: slot.label }"></ng-container>
+                  </ng-container>
+                  <ng-template #officialPlaceholder>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: slot.label, title: slot.title, body: slot.body, format: slot.format }"></ng-container>
+                  </ng-template>
                 </article>
               </section>
             </div>
@@ -494,6 +490,23 @@ import {
           <span>{{ getCourtName(match) }}</span>
           <span>{{ formatMatchTime(match.scheduled_time) }}</span>
           <span>Ref: {{ match.referee_name || 'TBD' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template #placeholderBracketMatch let-label="label" let-title="title" let-format="format">
+        <div class="matchup-title">
+          <span>{{ label }}</span>
+          <strong>{{ format }}</strong>
+        </div>
+        <div class="placeholder-bracket-score">
+          <strong>{{ title }}</strong>
+          <span>0 - 0</span>
+        </div>
+        <div class="official-meta">
+          <span>Scheduled</span>
+          <span>Court TBD</span>
+          <span>Time TBD</span>
+          <span>Ref: TBD</span>
         </div>
       </ng-template>
 
@@ -1534,6 +1547,73 @@ import {
         font-weight: 950;
       }
 
+      .bracket-arena {
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid rgba(20, 184, 166, 0.18);
+        border-radius: 1.2rem;
+        background:
+          radial-gradient(circle at 50% 20%, rgba(20, 184, 166, 0.1), transparent 34%),
+          linear-gradient(135deg, rgba(2, 6, 23, 0.42), rgba(15, 23, 42, 0.34));
+        overflow: hidden;
+      }
+
+      .bracket-lane,
+      .bracket-center-lane {
+        display: grid;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .bracket-center-lane {
+        align-content: center;
+      }
+
+      .bracket-lane .round-heading,
+      .bracket-center-lane .round-heading {
+        min-height: 3.4rem;
+        align-content: end;
+      }
+
+      .placeholder-bracket-score {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.28rem 0;
+      }
+
+      .placeholder-bracket-score strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        color: var(--ink);
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+
+      .placeholder-bracket-score span {
+        color: var(--ink);
+        font-weight: 950;
+      }
+
+      .center-final {
+        border-color: rgba(245, 158, 11, 0.48);
+        background:
+          linear-gradient(135deg, rgba(245, 158, 11, 0.12), transparent 56%),
+          rgba(15, 23, 42, 0.68);
+      }
+
+      .third-place-match {
+        opacity: 0.94;
+      }
+
+      .compact-champion {
+        min-height: auto;
+        padding: 0.85rem;
+      }
+
       @media (min-width: 860px) {
         .match-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1613,6 +1693,71 @@ import {
           grid-template-columns: repeat(4, minmax(0, 1fr));
           align-items: start;
         }
+
+        .official-board.bracket-arena {
+          grid-template-columns: minmax(13rem, 1.25fr) minmax(11.5rem, 0.95fr) minmax(13rem, 1fr) minmax(11.5rem, 0.95fr) minmax(13rem, 1.25fr);
+          align-items: center;
+        }
+
+        .qf-lane {
+          grid-template-rows: auto repeat(2, minmax(8.8rem, auto));
+          gap: 0.8rem;
+        }
+
+        .sf-lane {
+          align-content: center;
+          min-height: 28rem;
+        }
+
+        .left-lane,
+        .right-lane {
+          position: relative;
+        }
+
+        .connector-right::after,
+        .connector-left::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          width: 0.9rem;
+          border-top: 2px solid rgba(20, 184, 166, 0.74);
+        }
+
+        .connector-right::after {
+          right: -0.9rem;
+        }
+
+        .connector-left::before {
+          left: -0.9rem;
+        }
+
+        .qf-lane::after,
+        .qf-lane::before {
+          content: "";
+          position: absolute;
+          width: 0.9rem;
+          height: 5.9rem;
+          top: 47%;
+          transform: translateY(-50%);
+        }
+
+        .qf-lane.left-lane::after {
+          right: -0.9rem;
+          border-right: 2px solid rgba(20, 184, 166, 0.62);
+          border-top: 2px solid rgba(20, 184, 166, 0.62);
+          border-bottom: 2px solid rgba(20, 184, 166, 0.62);
+        }
+
+        .qf-lane.right-lane::before {
+          left: -0.9rem;
+          border-left: 2px solid rgba(20, 184, 166, 0.62);
+          border-top: 2px solid rgba(20, 184, 166, 0.62);
+          border-bottom: 2px solid rgba(20, 184, 166, 0.62);
+        }
+
+        .bracket-center-lane {
+          gap: 0.95rem;
+        }
       }
 
       @media (max-width: 720px) {
@@ -1682,6 +1827,16 @@ import {
           color: var(--teal);
           font-weight: 950;
         }
+
+        .bracket-arena {
+          padding: 0.75rem;
+        }
+
+        .bracket-lane:not(:last-child),
+        .bracket-center-lane {
+          padding-bottom: 0.85rem;
+          border-bottom: 1px solid rgba(20, 184, 166, 0.16);
+        }
       }
     `,
   ],
@@ -1704,6 +1859,14 @@ export class TournamentViewerPageComponent implements OnDestroy {
   bracketMode: 'official' | 'seeding' = 'official';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
   isBracketPage = this.route.snapshot.routeConfig?.path === 'viewer/tournament/:id/brackets';
+  leftQuarterfinalSlots = [
+    { stage: 'quarter_final_1', label: 'QF1', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_2', label: 'QF2', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+  ];
+  rightQuarterfinalSlots = [
+    { stage: 'quarter_final_3', label: 'QF3', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_4', label: 'QF4', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+  ];
 
   constructor() {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab');
@@ -1913,6 +2076,11 @@ export class TournamentViewerPageComponent implements OnDestroy {
         return normalizedStage === stage || normalizedStage.startsWith(`${stage}_`);
       })
       .sort((a, b) => normalizeStage(a.stage).localeCompare(normalizeStage(b.stage)));
+  }
+
+  getOfficialMatch(stage: string): Match | undefined {
+    const normalizedStage = normalizeStage(stage);
+    return this.officialKnockoutMatches.find((match) => normalizeStage(match.stage) === normalizedStage);
   }
 
   getStandingTeamName(standing: Standing): string {
