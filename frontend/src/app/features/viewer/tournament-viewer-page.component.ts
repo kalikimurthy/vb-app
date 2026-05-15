@@ -1884,7 +1884,12 @@ export class TournamentViewerPageComponent implements OnDestroy {
   }
 
   getOfficialRoundMatches(stage: string): Match[] {
-    return this.officialKnockoutMatches.filter((match) => normalizeStage(match.stage) === stage);
+    return this.officialKnockoutMatches
+      .filter((match) => {
+        const normalizedStage = normalizeStage(match.stage);
+        return normalizedStage === stage || normalizedStage.startsWith(`${stage}_`);
+      })
+      .sort((a, b) => normalizeStage(a.stage).localeCompare(normalizeStage(b.stage)));
   }
 
   getStandingTeamName(standing: Standing): string {

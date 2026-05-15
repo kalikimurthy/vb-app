@@ -27,8 +27,16 @@ import {
           <h2>Matches</h2>
           <p>Create fixtures, review court assignments, and open one match at a time for scoring.</p>
         </div>
-        <div class="status-pill">{{ matches.length }} Matches</div>
+        <div class="hero-actions">
+          <div class="status-pill">{{ matches.length }} Matches</div>
+          <button type="button" class="knockout-button" (click)="generateKnockout()" [disabled]="isGeneratingKnockout">
+            {{ isGeneratingKnockout ? 'Generating...' : 'Generate Official Knockout Matches' }}
+          </button>
+        </div>
       </header>
+
+      <p *ngIf="knockoutSuccess" class="success">{{ knockoutSuccess }}</p>
+      <p *ngIf="knockoutError" class="error">{{ knockoutError }}</p>
 
       <ng-container *ngFor="let section of matchSections">
         <section class="match-section" *ngIf="section.matches.length">
@@ -104,6 +112,29 @@ import {
       .match-list {
         display: grid;
         gap: 0.75rem;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.65rem;
+      }
+
+      .knockout-button {
+        min-height: 2.75rem;
+        padding: 0.78rem 1rem;
+        border: 1px solid rgba(20, 184, 166, 0.28);
+        border-radius: 0.9rem;
+        background: rgba(20, 184, 166, 0.12);
+        color: var(--ink);
+        font-weight: 900;
+      }
+
+      .knockout-button:disabled {
+        cursor: wait;
+        opacity: 0.68;
       }
 
       .match-section {
@@ -261,8 +292,11 @@ export class MatchesPageComponent {
   courts: Court[] = [];
   matches: Match[] = [];
   isCreating = false;
+  isGeneratingKnockout = false;
   createError = '';
   createSuccess = '';
+  knockoutError = '';
+  knockoutSuccess = '';
 
   form: Match = {
     tournament: 0,
@@ -337,6 +371,33 @@ export class MatchesPageComponent {
       error: (err) => {
         this.createError = this.formatApiError(err);
         this.isCreating = false;
+      },
+    });
+  }
+
+  generateKnockout(): void {
+    this.knockoutError = '';
+    this.knockoutSuccess = '';
+
+    const tournament = this.form.tournament || this.tournaments[0]?.id;
+    if (!tournament) {
+      this.knockoutError = 'Select a tournament before generating knockout matches.';
+      return;
+    }
+
+    this.isGeneratingKnockout = true;
+    this.api.action<{ created: number; detail: string }>('matches', 'generate_knockout', { tournament }).subscribe({
+      next: (result) => {
+        this.knockoutSuccess =
+          result.created > 0
+            ? `${result.detail} ${result.created} official knockout matches created.`
+            : `${result.detail} No duplicate matches were created.`;
+        this.isGeneratingKnockout = false;
+        this.load();
+      },
+      error: (err) => {
+        this.knockoutError = this.formatApiError(err);
+        this.isGeneratingKnockout = false;
       },
     });
   }
