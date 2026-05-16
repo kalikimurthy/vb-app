@@ -93,7 +93,7 @@ import {
               </div>
 
               <div class="card-actions">
-                <button type="button" class="edit-link" (click)="startEdit(m)">Edit Match</button>
+                <button type="button" class="edit-link" (click)="startEdit(m, $event)">Edit Match</button>
                 <a class="score-link" [routerLink]="['/matches', m.id, 'score']" [queryParams]="{ from: 'matches' }">
                   Score Match
                 </a>
@@ -398,6 +398,8 @@ import {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 0.55rem;
+        position: relative;
+        z-index: 3;
       }
 
       .edit-link {
@@ -409,6 +411,10 @@ import {
         color: var(--ink);
         font-weight: 900;
         text-align: center;
+        cursor: pointer;
+        pointer-events: auto;
+        position: relative;
+        z-index: 3;
       }
 
       .edit-link.subtle {
@@ -643,7 +649,9 @@ export class MatchesPageComponent {
     });
   }
 
-  startEdit(match: Match): void {
+  startEdit(match: Match, event?: MouseEvent): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.editError = '';
     this.editSuccess = '';
     this.editForm = {
@@ -651,6 +659,9 @@ export class MatchesPageComponent {
       best_of: match.best_of || 1,
       scheduled_time: this.toDateTimeLocal(match.scheduled_time),
     };
+    setTimeout(() => {
+      document.querySelector('.edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   cancelEdit(): void {

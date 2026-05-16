@@ -37,6 +37,10 @@ import {
         <div class="scoreboard">
           <div class="team-score">
             <strong>{{ getTeamName(match.team_a) }}</strong>
+            <div class="score-stepper">
+              <button type="button" class="step-btn" (click)="adjustScore('A', -1, $event)" [disabled]="isSaving || scoreA <= 0">-</button>
+              <button type="button" class="step-btn" (click)="adjustScore('A', 1, $event)" [disabled]="isSaving">+</button>
+            </div>
             <input
               type="number"
               inputmode="numeric"
@@ -52,6 +56,10 @@ import {
 
           <div class="team-score">
             <strong>{{ getTeamName(match.team_b) }}</strong>
+            <div class="score-stepper">
+              <button type="button" class="step-btn" (click)="adjustScore('B', -1, $event)" [disabled]="isSaving || scoreB <= 0">-</button>
+              <button type="button" class="step-btn" (click)="adjustScore('B', 1, $event)" [disabled]="isSaving">+</button>
+            </div>
             <input
               type="number"
               inputmode="numeric"
@@ -73,10 +81,10 @@ import {
         </div>
 
         <div class="action-row">
-          <button type="button" class="live-button" (click)="markLive()" [disabled]="isSaving">
+          <button type="button" class="live-button" (click)="markLive($event)" [disabled]="isSaving">
             {{ status === 'Live' ? 'Mark Live' : 'Start Live' }}
           </button>
-          <button type="button" class="complete-button" (click)="completeMatch()" [disabled]="isSaving">
+          <button type="button" class="complete-button" (click)="completeMatch($event)" [disabled]="isSaving">
             Complete Match
           </button>
           <a [routerLink]="backLink" class="back-button">Back</a>
@@ -150,6 +158,28 @@ import {
         background: rgba(15, 23, 42, 0.45);
       }
 
+      .score-stepper {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+      }
+
+      .step-btn {
+        min-height: 2.65rem;
+        padding: 0.55rem;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        border-radius: 0.8rem;
+        background: rgba(15, 23, 42, 0.52);
+        color: var(--ink);
+        font-size: 1.35rem;
+        font-weight: 950;
+        line-height: 1;
+        cursor: pointer;
+        pointer-events: auto;
+        position: relative;
+        z-index: 3;
+      }
+
       .team-score strong {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -189,6 +219,15 @@ import {
       .action-row {
         display: grid;
         gap: 0.6rem;
+        position: relative;
+        z-index: 3;
+      }
+
+      .action-row button,
+      .action-row a {
+        pointer-events: auto;
+        position: relative;
+        z-index: 3;
       }
 
       .autosave-row {
@@ -319,13 +358,32 @@ export class MatchScorePageComponent {
     this.scheduleAutosave();
   }
 
-  markLive(): void {
+  adjustScore(team: 'A' | 'B', delta: number, event?: MouseEvent): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const current = team === 'A' ? this.scoreA : this.scoreB;
+    const next = Math.max(0, current + delta);
+
+    if (team === 'A') {
+      this.scoreA = next;
+    } else {
+      this.scoreB = next;
+    }
+
+    this.scheduleAutosave();
+  }
+
+  markLive(event?: MouseEvent): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.clearAutosaveTimer();
     this.status = 'Live';
     this.persistScore('Live', 'Match marked live.');
   }
 
-  completeMatch(): void {
+  completeMatch(event?: MouseEvent): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.clearAutosaveTimer();
     this.status = 'Completed';
     this.persistScore('Completed', 'Match completed.');
