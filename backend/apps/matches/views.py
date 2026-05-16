@@ -158,10 +158,10 @@ class MatchViewSet(ModelViewSet):
             Match.objects.filter(id=match.id).update(winner_team=winner)
 
         stage = match.stage
-        if stage in {"quarter_final_1", "quarter_final_2"}:
+        if stage in {"quarter_final_1", "quarter_final_4"}:
             self._assign_next_slot(match, "semi_final_1", winner, "a" if stage == "quarter_final_1" else "b")
-        elif stage in {"quarter_final_3", "quarter_final_4"}:
-            self._assign_next_slot(match, "semi_final_2", winner, "a" if stage == "quarter_final_3" else "b")
+        elif stage in {"quarter_final_2", "quarter_final_3"}:
+            self._assign_next_slot(match, "semi_final_2", winner, "a" if stage == "quarter_final_2" else "b")
         elif stage == "semi_final_1":
             self._assign_next_slot(match, "final", winner, "a")
             self._assign_next_slot(match, "third_place", loser, "a")

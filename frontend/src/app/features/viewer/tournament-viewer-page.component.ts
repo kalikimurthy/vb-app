@@ -307,7 +307,7 @@ import {
                     <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF1' }"></ng-container>
                   </ng-container>
                   <ng-template #sfOnePlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF1', title: 'Winner QF1 vs Winner QF2', body: 'Winner QF1 vs Winner QF2', format: 'Best of 1' }"></ng-container>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF1', title: 'Winner QF1 vs Winner QF4', body: 'Winner QF1 vs Winner QF4', format: 'Best of 1' }"></ng-container>
                   </ng-template>
                 </article>
               </section>
@@ -359,7 +359,7 @@ import {
                     <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF2' }"></ng-container>
                   </ng-container>
                   <ng-template #sfTwoPlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF2', title: 'Winner QF3 vs Winner QF4', body: 'Winner QF3 vs Winner QF4', format: 'Best of 1' }"></ng-container>
+                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF2', title: 'Winner QF2 vs Winner QF3', body: 'Winner QF2 vs Winner QF3', format: 'Best of 1' }"></ng-container>
                   </ng-template>
                 </article>
               </section>
@@ -1861,11 +1861,11 @@ export class TournamentViewerPageComponent implements OnDestroy {
   isBracketPage = this.route.snapshot.routeConfig?.path === 'viewer/tournament/:id/brackets';
   leftQuarterfinalSlots = [
     { stage: 'quarter_final_1', label: 'QF1', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
-    { stage: 'quarter_final_2', label: 'QF2', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_4', label: 'QF4', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
   ];
   rightQuarterfinalSlots = [
+    { stage: 'quarter_final_2', label: 'QF2', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
     { stage: 'quarter_final_3', label: 'QF3', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
-    { stage: 'quarter_final_4', label: 'QF4', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
   ];
 
   constructor() {
