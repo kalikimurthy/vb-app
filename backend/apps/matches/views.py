@@ -109,7 +109,7 @@ class MatchViewSet(ModelViewSet):
 
         created = 0
         for stage, team_a, team_b in qf_pairings:
-            _match, was_created = Match.objects.get_or_create(
+            match, was_created = Match.objects.get_or_create(
                 tournament_id=tournament_id,
                 match_type=MatchType.KNOCKOUT,
                 pool_type=pool_type,
@@ -125,6 +125,18 @@ class MatchViewSet(ModelViewSet):
                     "bracket_locked": False,
                 },
             )
+            legacy_match = self._find_legacy_quarterfinal(tournament_id, pool_type, team_a.id, team_b.id)
+            if legacy_match and self._legacy_result_is_better(legacy_match, match):
+                match.score_a = legacy_match.score_a
+                match.score_b = legacy_match.score_b
+                match.status = legacy_match.status
+                match.winner_team = legacy_match.winner_team
+                match.court = legacy_match.court
+                match.court_name = legacy_match.court_name
+                match.referee_name = legacy_match.referee_name
+                match.scheduled_time = legacy_match.scheduled_time
+                match.save()
+                self._sync_knockout_progression(match)
             created += int(was_created)
 
         for stage in ["semi_final_1", "semi_final_2", "third_place", "final"]:
@@ -145,6 +157,24 @@ class MatchViewSet(ModelViewSet):
             created += int(was_created)
 
         return created
+
+    def _find_legacy_quarterfinal(self, tournament_id: int, pool_type: str, team_a_id: int, team_b_id: int):
+        return (
+            Match.objects.filter(
+                tournament_id=tournament_id,
+                match_type=MatchType.KNOCKOUT,
+                pool_type=pool_type,
+                stage="quarter_final",
+            )
+            .filter(team_a_id=team_a_id, team_b_id=team_b_id)
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+    def _legacy_result_is_better(self, legacy_match: Match, keyed_match: Match) -> bool:
+        keyed_has_result = keyed_match.status == MatchStatus.COMPLETED or keyed_match.score_a or keyed_match.score_b
+        legacy_has_result = legacy_match.status == MatchStatus.COMPLETED or legacy_match.score_a or legacy_match.score_b
+        return bool(legacy_has_result and not keyed_has_result)
 
     def _sync_knockout_progression(self, match: Match) -> None:
         if match.match_type != MatchType.KNOCKOUT or match.status != MatchStatus.COMPLETED:

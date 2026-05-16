@@ -1845,6 +1845,7 @@ export class TournamentViewerPageComponent implements OnDestroy {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private timer?: ReturnType<typeof setInterval>;
+  private duplicateWarnings = new Set<string>();
 
   tournament?: Tournament;
   teams: Team[] = [];
@@ -2035,8 +2036,11 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   loadMatches(): void {
     this.api
-      .list<Match>('matches', { tournament: this.tournamentId, ordering: 'scheduled_time', page_size: 100 })
-      .subscribe((r) => (this.matches = r.results));
+      .list<Match>('matches', { tournament: this.tournamentId, ordering: 'scheduled_time', page_size: 250 })
+      .subscribe((r) => {
+        this.matches = r.results;
+        this.warnDuplicateKnockoutMatches();
+      });
   }
 
   loadStandings(): void {
@@ -2080,7 +2084,25 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   getOfficialMatch(stage: string): Match | undefined {
     const normalizedStage = normalizeStage(stage);
-    return this.officialKnockoutMatches.find((match) => normalizeStage(match.stage) === normalizedStage);
+    const storedMatch = this.resolveStoredOfficialMatch(normalizedStage);
+
+    if (normalizedStage === 'semi_final_1') {
+      return this.hydrateMatchSlots(storedMatch, this.getAdvancingTeamId('quarter_final_1', 'winner'), this.getAdvancingTeamId('quarter_final_4', 'winner'));
+    }
+
+    if (normalizedStage === 'semi_final_2') {
+      return this.hydrateMatchSlots(storedMatch, this.getAdvancingTeamId('quarter_final_2', 'winner'), this.getAdvancingTeamId('quarter_final_3', 'winner'));
+    }
+
+    if (normalizedStage === 'final') {
+      return this.hydrateMatchSlots(storedMatch, this.getAdvancingTeamId('semi_final_1', 'winner'), this.getAdvancingTeamId('semi_final_2', 'winner'));
+    }
+
+    if (normalizedStage === 'third_place') {
+      return this.hydrateMatchSlots(storedMatch, this.getAdvancingTeamId('semi_final_1', 'loser'), this.getAdvancingTeamId('semi_final_2', 'loser'));
+    }
+
+    return storedMatch;
   }
 
   getStandingTeamName(standing: Standing): string {
@@ -2113,5 +2135,92 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   private isOtherMatch(match: Match): boolean {
     return !this.isPoolMatch(match) && !this.isChampionsMatch(match) && !this.isPremierMatch(match);
+  }
+
+  private resolveStoredOfficialMatch(stage: string): Match | undefined {
+    const exactMatch = this.pickBestOfficialMatch(
+      this.officialKnockoutMatches.filter((match) => normalizeStage(match.stage) === stage)
+    );
+
+    if (stage.startsWith('quarter_final') && exactMatch?.team_a && exactMatch.team_b) {
+      const legacyMatch = this.pickBestOfficialMatch(
+        this.officialKnockoutMatches.filter(
+          (match) =>
+            normalizeStage(match.stage) === 'quarter_final' &&
+            match.team_a === exactMatch.team_a &&
+            match.team_b === exactMatch.team_b
+        )
+      );
+
+      if (legacyMatch && this.isBetterDisplayMatch(legacyMatch, exactMatch)) {
+        console.warn(`Using completed legacy ${stage} match ${legacyMatch.id} instead of stale keyed match ${exactMatch.id}.`);
+        return legacyMatch;
+      }
+    }
+
+    return exactMatch;
+  }
+
+  private pickBestOfficialMatch(matches: Match[]): Match | undefined {
+    return [...matches].sort((a, b) => this.displayMatchRank(b) - this.displayMatchRank(a))[0];
+  }
+
+  private displayMatchRank(match: Match): number {
+    const statusRank = match.status === 'Completed' ? 1_000_000 : match.status === 'Live' ? 500_000 : 0;
+    const scoreRank = match.score_a || match.score_b ? 100_000 : 0;
+    const teamRank = match.team_a && match.team_b ? 10_000 : 0;
+    return statusRank + scoreRank + teamRank + (match.id || 0);
+  }
+
+  private isBetterDisplayMatch(candidate: Match, current: Match): boolean {
+    if (candidate.status === 'Completed' && current.status !== 'Completed') {
+      return true;
+    }
+
+    if ((candidate.score_a || candidate.score_b) && !(current.score_a || current.score_b)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private hydrateMatchSlots(match: Match | undefined, teamA?: number, teamB?: number): Match | undefined {
+    if (!match) {
+      return undefined;
+    }
+
+    return {
+      ...match,
+      team_a: match.team_a || teamA || null,
+      team_b: match.team_b || teamB || null,
+    };
+  }
+
+  private getAdvancingTeamId(stage: string, result: 'winner' | 'loser'): number | undefined {
+    const match = this.resolveStoredOfficialMatch(stage);
+    if (!match || match.status !== 'Completed' || !match.team_a || !match.team_b || match.score_a === match.score_b) {
+      return undefined;
+    }
+
+    const winner = match.winner_team || (match.score_a > match.score_b ? match.team_a : match.team_b);
+    const loser = winner === match.team_a ? match.team_b : match.team_a;
+    return result === 'winner' ? winner : loser;
+  }
+
+  private warnDuplicateKnockoutMatches(): void {
+    const seen = new Map<string, Match[]>();
+    this.matches
+      .filter((match) => match.match_type === 'knockout')
+      .forEach((match) => {
+        const key = `${match.pool_type}:${normalizeStage(match.stage)}:${match.team_a || 'tbd'}:${match.team_b || 'tbd'}`;
+        seen.set(key, [...(seen.get(key) || []), match]);
+      });
+
+    seen.forEach((matches, key) => {
+      if (matches.length > 1 && !this.duplicateWarnings.has(key)) {
+        this.duplicateWarnings.add(key);
+        console.warn('Duplicate official knockout matches detected:', matches);
+      }
+    });
   }
 }
