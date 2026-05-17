@@ -92,7 +92,26 @@ import {
       </section>
 
       <ng-container *ngIf="activeTab === 'matches'">
-        <ng-container *ngFor="let section of matchSections">
+        <section class="public-match-toolbar" aria-label="Match list filter">
+          <div>
+            <p class="kicker">Match list</p>
+            <strong>{{ activeMatchView === 'live' ? liveMatches.length : matches.length }} games</strong>
+          </div>
+          <div class="match-view-toggle">
+            <button type="button" [class.active]="activeMatchView === 'all'" (click)="setMatchView('all')">
+              All Games
+            </button>
+            <button type="button" [class.active]="activeMatchView === 'live'" (click)="setMatchView('live')">
+              Live
+            </button>
+          </div>
+        </section>
+
+        <div class="empty-state" *ngIf="activeMatchView === 'live' && !liveMatches.length">
+          No live matches right now.
+        </div>
+
+        <ng-container *ngFor="let section of publicMatchSections">
           <section class="match-section" *ngIf="section.matches.length">
             <div class="match-section-heading">
               <h3>{{ section.title }}</h3>
@@ -454,23 +473,47 @@ import {
       </ng-container>
 
       <ng-template #matchCard let-match>
-        <article class="viewer-card" [class.live]="match.status === 'Live'" [class.completed]="match.status === 'Completed'">
-          <div class="card-meta">
-            <span>{{ formatMatchTime(match.scheduled_time) }}</span>
-            <span>{{ getCourtName(match) }}</span>
-            <span class="badge">{{ match.status === 'Live' ? 'LIVE' : match.status === 'Completed' ? 'Completed' : 'Scheduled' }}</span>
+        <article
+          class="viewer-card match-row-card"
+          [class.live]="match.status === 'Live'"
+          [class.completed]="match.status === 'Completed'"
+          [class.expanded]="expandedMatchId === match.id"
+          tabindex="0"
+          role="button"
+          [attr.aria-expanded]="expandedMatchId === match.id"
+          (click)="toggleMatch(match)"
+          (keyup.enter)="toggleMatch(match)"
+        >
+          <div class="match-row-main">
+            <div class="match-row-status">
+              <strong>{{ getCompactStatusPrimary(match) }}</strong>
+              <span>{{ getCompactStatusSecondary(match) }}</span>
+            </div>
+
+            <div class="match-row-team home">
+              <span>{{ getTeamName(match.team_a) }}</span>
+            </div>
+
+            <div class="match-row-score">
+              {{ getCompactScoreLabel(match) }}
+            </div>
+
+            <div class="match-row-team away">
+              <span>{{ getTeamName(match.team_b) }}</span>
+            </div>
+
+            <span class="compact-court">{{ getCourtName(match) }}</span>
           </div>
 
-          <div class="compact-scoreline">
-            <strong>{{ getTeamName(match.team_a) }}</strong>
-            <span>{{ match.score_a }} - {{ match.score_b }}</span>
-            <strong>{{ getTeamName(match.team_b) }}</strong>
-          </div>
-
-          <div class="official-meta">
-            <span *ngIf="getMatchStageLabel(match)">{{ getMatchStageLabel(match) }}</span>
-            <span *ngIf="getMatchFormatLabel(match)">{{ getMatchFormatLabel(match) }}</span>
-            <span>Ref: {{ match.referee_name || 'TBD' }}</span>
+          <div class="match-expanded-details" *ngIf="expandedMatchId === match.id">
+            <div><span>Court</span><strong>{{ getCourtName(match) }}</strong></div>
+            <div><span>Referee</span><strong>{{ match.referee_name || 'TBD' }}</strong></div>
+            <div><span>Group / Division</span><strong>{{ getMatchStageLabel(match) || 'Unassigned' }}</strong></div>
+            <div><span>Round / Stage</span><strong>{{ match.stage || 'TBD' }}</strong></div>
+            <div><span>Match Type</span><strong>{{ getMatchTypeLabel(match) }}</strong></div>
+            <div><span>Format</span><strong>{{ getMatchFormatLabel(match) || 'Best of 1' }}</strong></div>
+            <div><span>Status</span><strong>{{ match.status }}</strong></div>
+            <div><span>Full Score</span><strong>{{ match.score_a }} - {{ match.score_b }}</strong></div>
           </div>
         </article>
       </ng-template>
@@ -562,7 +605,7 @@ import {
     `
       .viewer-page {
         display: grid;
-        gap: 1rem;
+        gap: 0.9rem;
         max-width: 100%;
         overflow-x: hidden;
       }
@@ -694,6 +737,7 @@ import {
         box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
+        overscroll-behavior-inline: contain;
       }
 
       .viewer-tabs button,
@@ -709,6 +753,11 @@ import {
         border-radius: 0.8rem;
         font-weight: 900;
         text-decoration: none;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
       }
 
       .viewer-tabs button.active {
@@ -721,7 +770,7 @@ import {
 
       .match-section {
         display: grid;
-        gap: 0.7rem;
+        gap: 0.56rem;
       }
 
       .match-section h3 {
@@ -1312,6 +1361,51 @@ import {
         gap: 0.65rem;
       }
 
+      .public-match-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.5);
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .public-match-toolbar strong {
+        color: var(--ink);
+        font-size: 0.92rem;
+      }
+
+      .match-view-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .match-view-toggle button {
+        min-height: 2.5rem;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.52);
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .match-view-toggle button.active {
+        border-color: rgba(20, 184, 166, 0.4);
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.34), rgba(20, 184, 166, 0.22)),
+          rgba(15, 23, 42, 0.56);
+        color: var(--ink);
+      }
+
       .standing-card {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
@@ -1387,7 +1481,7 @@ import {
 
       .match-grid {
         display: grid;
-        gap: 0.72rem;
+        gap: 0.48rem;
       }
 
       .viewer-card {
@@ -1417,6 +1511,179 @@ import {
 
       .viewer-card.completed {
         opacity: 0.86;
+      }
+
+      .match-row-card {
+        position: relative;
+        gap: 0;
+        padding: 0.58rem 0.68rem 0.58rem 0.82rem;
+        cursor: pointer;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.2);
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .match-row-card::before {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0.18rem;
+        height: auto;
+        border-radius: 0;
+      }
+
+      .match-row-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(148, 163, 184, 0.24);
+      }
+
+      .match-row-card:focus-visible {
+        outline: 2px solid rgba(20, 184, 166, 0.6);
+        outline-offset: 2px;
+      }
+
+      .match-row-card.expanded {
+        border-color: rgba(20, 184, 166, 0.34);
+        background:
+          linear-gradient(135deg, rgba(20, 184, 166, 0.08), transparent 42%),
+          rgba(15, 23, 42, 0.6);
+      }
+
+      .match-row-main {
+        display: grid;
+        grid-template-columns: 4.1rem minmax(0, 1fr) minmax(4.7rem, auto) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.55rem;
+        min-width: 0;
+      }
+
+      .match-row-status {
+        display: grid;
+        align-content: center;
+        gap: 0.08rem;
+        min-width: 0;
+      }
+
+      .match-row-status strong {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        min-width: 2.25rem;
+        padding: 0.14rem 0.34rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--ink);
+        font-size: 0.74rem;
+        font-weight: 950;
+        line-height: 1.05;
+      }
+
+      .live .match-row-status strong {
+        background: rgba(245, 158, 11, 0.18);
+        color: #fcd34d;
+      }
+
+      .completed .match-row-status strong {
+        background: rgba(34, 197, 94, 0.12);
+        color: #bbf7d0;
+      }
+
+      .match-row-status span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted);
+        font-size: 0.64rem;
+        font-weight: 850;
+      }
+
+      .match-row-team {
+        min-width: 0;
+        color: var(--ink);
+        font-size: 0.91rem;
+        font-weight: 900;
+      }
+
+      .match-row-team span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .match-row-team.away {
+        text-align: right;
+      }
+
+      .match-row-score {
+        min-width: 4.7rem;
+        padding: 0.24rem 0.42rem;
+        border-radius: 0.68rem;
+        background: rgba(2, 6, 23, 0.32);
+        color: var(--ink);
+        font-size: 1.02rem;
+        font-weight: 950;
+        text-align: center;
+        white-space: nowrap;
+        letter-spacing: 0;
+      }
+
+      .compact-court {
+        max-width: 7rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0.24rem 0.44rem;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.42);
+        color: var(--muted-strong);
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .match-expanded-details {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.38rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .match-expanded-details div {
+        min-width: 0;
+        padding: 0.42rem 0.48rem;
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 0.68rem;
+        background: rgba(15, 23, 42, 0.34);
+      }
+
+      .match-expanded-details span,
+      .match-expanded-details strong {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .match-expanded-details span {
+        color: var(--muted);
+        font-size: 0.58rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .match-expanded-details strong {
+        margin-top: 0.1rem;
+        color: var(--ink);
+        font-size: 0.74rem;
+        font-weight: 900;
       }
 
       .card-meta {
@@ -1616,7 +1883,7 @@ import {
 
       @media (min-width: 860px) {
         .match-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: minmax(0, 1fr);
         }
 
         .viewer-summary {
@@ -1761,6 +2028,47 @@ import {
       }
 
       @media (max-width: 720px) {
+        .viewer-page {
+          gap: 0.72rem;
+        }
+
+        .viewer-hero {
+          gap: 0.65rem;
+          padding: 0.85rem;
+        }
+
+        .viewer-hero h2 {
+          margin-top: 0.18rem;
+          font-size: 1.32rem;
+          line-height: 1.1;
+        }
+
+        .viewer-hero p {
+          margin-top: 0.22rem;
+          font-size: 0.82rem;
+        }
+
+        .trust-labels {
+          gap: 0.32rem;
+          margin-top: 0.55rem;
+        }
+
+        .trust-labels span,
+        .read-only-pill,
+        .viewer-link-pill {
+          padding: 0.3rem 0.5rem;
+          font-size: 0.66rem;
+        }
+
+        .viewer-summary {
+          gap: 0.55rem;
+        }
+
+        .summary-card {
+          gap: 0.26rem;
+          padding: 0.72rem;
+        }
+
         .section-title,
         .bracket-intro {
           align-items: flex-start;
@@ -1782,15 +2090,119 @@ import {
         }
 
         .viewer-tabs {
-          gap: 0.35rem;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          display: flex;
+          gap: 0.38rem;
+          overflow-x: auto;
+          padding: 0.28rem;
+          scroll-snap-type: x proximity;
+          scrollbar-width: none;
+        }
+
+        .viewer-tabs::-webkit-scrollbar {
+          display: none;
         }
 
         .viewer-tabs button,
-        .viewer-tabs a,
+        .viewer-tabs a {
+          flex: 0 0 auto;
+          min-width: max-content;
+          min-height: 2.28rem;
+          padding-inline: 0.88rem;
+          font-size: 0.82rem;
+          scroll-snap-align: start;
+        }
+
         .league-switch button {
           padding-inline: 0.35rem;
           font-size: 0.82rem;
+        }
+
+        .public-match-toolbar {
+          align-items: stretch;
+          gap: 0.52rem;
+          padding: 0.62rem;
+        }
+
+        .match-view-toggle {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          width: 100%;
+        }
+
+        .match-grid {
+          gap: 0.42rem;
+        }
+
+        .match-row-card {
+          padding: 0.52rem 0.58rem 0.52rem 0.72rem;
+          border-radius: 0.86rem;
+        }
+
+        .match-row-main {
+          grid-template-columns: 3.28rem minmax(0, 1fr) minmax(4.25rem, auto);
+          grid-template-areas:
+            "status home score"
+            "status away court";
+          gap: 0.24rem 0.5rem;
+        }
+
+        .match-row-status {
+          grid-area: status;
+        }
+
+        .match-row-status strong {
+          min-width: 2rem;
+          padding: 0.12rem 0.3rem;
+          font-size: 0.68rem;
+        }
+
+        .match-row-status span {
+          font-size: 0.6rem;
+        }
+
+        .match-row-team.home {
+          grid-area: home;
+        }
+
+        .match-row-team {
+          font-size: 0.88rem;
+        }
+
+        .match-row-team.away {
+          grid-area: away;
+          text-align: left;
+        }
+
+        .match-row-score {
+          grid-area: score;
+          min-width: 4.25rem;
+          font-size: 0.95rem;
+        }
+
+        .compact-court {
+          grid-area: court;
+          justify-self: end;
+          max-width: 5.25rem;
+          font-size: 0.64rem;
+        }
+
+        .match-expanded-details {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.32rem;
+          margin-top: 0.44rem;
+          padding-top: 0.44rem;
+        }
+
+        .match-expanded-details div {
+          padding: 0.36rem 0.42rem;
+        }
+
+        .match-expanded-details span {
+          font-size: 0.54rem;
+        }
+
+        .match-expanded-details strong {
+          font-size: 0.7rem;
         }
 
         .section-title p:not(.kicker) {
@@ -1856,6 +2268,8 @@ export class TournamentViewerPageComponent implements OnDestroy {
   standings: Standing[] = [];
   viewerError = '';
   activeTab: 'matches' | 'groups' | 'standings' | 'brackets' = 'matches';
+  activeMatchView: 'all' | 'live' = 'all';
+  expandedMatchId?: number;
   selectedBracket: PublicBracketKey = 'champions';
   bracketMode: 'official' | 'seeding' = 'official';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
@@ -1937,6 +2351,16 @@ export class TournamentViewerPageComponent implements OnDestroy {
       { title: 'Division A · Champions League', matches: this.matches.filter((match) => this.isChampionsMatch(match)) },
       { title: 'Division B · Premier League', matches: this.matches.filter((match) => this.isPremierMatch(match)) },
       { title: 'Independent / Other', matches: this.matches.filter((match) => this.isOtherMatch(match)) },
+    ];
+  }
+
+  get publicMatchSections(): { title: string; matches: Match[] }[] {
+    const source = this.activeMatchView === 'live' ? this.liveMatches : this.matches;
+    return [
+      { title: 'Pool Matches', matches: source.filter((match) => this.isPoolMatch(match)) },
+      { title: 'Division A · Champions League', matches: source.filter((match) => this.isChampionsMatch(match)) },
+      { title: 'Division B · Premier League', matches: source.filter((match) => this.isPremierMatch(match)) },
+      { title: 'Independent / Other', matches: source.filter((match) => this.isOtherMatch(match)) },
     ];
   }
 
@@ -2071,6 +2495,47 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   formatMatchTime(value?: string | null): string {
     return formatMatchTime(value);
+  }
+
+  setMatchView(view: 'all' | 'live'): void {
+    this.activeMatchView = view;
+    this.expandedMatchId = undefined;
+  }
+
+  toggleMatch(match: Match): void {
+    this.expandedMatchId = this.expandedMatchId === match.id ? undefined : match.id;
+  }
+
+  getCompactStatusPrimary(match: Match): string {
+    if (match.status === 'Live') {
+      return 'LIVE';
+    }
+
+    if (match.status === 'Completed') {
+      return 'FT';
+    }
+
+    return formatMatchTime(match.scheduled_time);
+  }
+
+  getCompactStatusSecondary(match: Match): string {
+    if (match.status === 'Scheduled') {
+      return 'Scheduled';
+    }
+
+    return formatMatchTime(match.scheduled_time);
+  }
+
+  getCompactScoreLabel(match: Match): string {
+    if (match.status === 'Scheduled') {
+      return formatMatchTime(match.scheduled_time);
+    }
+
+    return `${match.score_a} - ${match.score_b}`;
+  }
+
+  getMatchTypeLabel(match: Match): string {
+    return match.match_type === 'knockout' ? 'Knockout' : 'Pool / group stage';
   }
 
   getOfficialRoundMatches(stage: string): Match[] {
