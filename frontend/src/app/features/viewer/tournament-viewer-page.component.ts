@@ -76,6 +76,25 @@ import {
         </article>
       </section>
 
+      <section class="viewer-shortcuts" aria-label="Quick public sections" *ngIf="!isBracketPage">
+        <button type="button" (click)="showAllMatches()">
+          <span>Schedule</span>
+          <strong>All matches</strong>
+        </button>
+        <button type="button" (click)="showLiveMatches()">
+          <span>Live</span>
+          <strong>{{ liveMatches.length || 'No' }} live</strong>
+        </button>
+        <button type="button" (click)="activeTab = 'standings'">
+          <span>Ranks</span>
+          <strong>Standings</strong>
+        </button>
+        <a [routerLink]="['/viewer/tournament', tournamentId, 'brackets']">
+          <span>Knockout</span>
+          <strong>Brackets</strong>
+        </a>
+      </section>
+
       <section class="viewer-tabs" aria-label="Public viewer sections" *ngIf="!isBracketPage">
         <button type="button" [class.active]="activeTab === 'matches'" (click)="activeTab = 'matches'">
           Matches
@@ -86,7 +105,7 @@ import {
         <button type="button" [class.active]="activeTab === 'standings'" (click)="activeTab = 'standings'">
           Standings
         </button>
-        <a [routerLink]="['/viewer/tournament', tournamentId, 'brackets']">
+        <a [class.active]="activeTab === 'brackets'" [routerLink]="['/viewer/tournament', tournamentId, 'brackets']">
           Brackets
         </a>
       </section>
@@ -1077,6 +1096,66 @@ import {
         font-weight: 850;
       }
 
+      .viewer-shortcuts {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+
+      .viewer-shortcuts button,
+      .viewer-shortcuts a {
+        min-width: 0;
+        padding: 0.66rem 0.7rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 0.95rem;
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 58%),
+          rgba(15, 23, 42, 0.5);
+        color: var(--ink);
+        text-align: left;
+        text-decoration: none;
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        cursor: pointer;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .viewer-shortcuts button:hover,
+      .viewer-shortcuts a:hover,
+      .viewer-shortcuts button:focus-visible,
+      .viewer-shortcuts a:focus-visible {
+        transform: translateY(-1px);
+        border-color: rgba(20, 184, 166, 0.4);
+        outline: none;
+      }
+
+      .viewer-shortcuts span,
+      .viewer-shortcuts strong {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .viewer-shortcuts span {
+        color: var(--muted);
+        font-size: 0.66rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .viewer-shortcuts strong {
+        margin-top: 0.18rem;
+        color: var(--ink);
+        font-size: 0.86rem;
+      }
+
       .viewer-tabs {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1117,7 +1196,22 @@ import {
           linear-gradient(135deg, rgba(37, 99, 235, 0.38), rgba(20, 184, 166, 0.22)),
           rgba(15, 23, 42, 0.45);
         color: var(--ink);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 0 1px rgba(20, 184, 166, 0.16),
+          0 10px 22px rgba(37, 99, 235, 0.16);
+      }
+
+      .viewer-tabs a.active {
+        border-color: rgba(20, 184, 166, 0.36);
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.38), rgba(20, 184, 166, 0.22)),
+          rgba(15, 23, 42, 0.45);
+        color: var(--ink);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 0 1px rgba(20, 184, 166, 0.16),
+          0 10px 22px rgba(37, 99, 235, 0.16);
       }
 
       .match-section {
@@ -2813,6 +2907,22 @@ import {
           padding: 0.72rem;
         }
 
+        .viewer-shortcuts {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.46rem;
+        }
+
+        .viewer-shortcuts button,
+        .viewer-shortcuts a {
+          min-height: 3.7rem;
+          padding: 0.58rem 0.62rem;
+          border-radius: 0.9rem;
+        }
+
+        .viewer-shortcuts strong {
+          font-size: 0.82rem;
+        }
+
         .viewer-page .empty-state {
           padding: 0.74rem;
           border-radius: 0.92rem;
@@ -3244,26 +3354,19 @@ import {
         }
 
         .viewer-tabs {
-          display: flex;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 0.38rem;
-          overflow-x: auto;
+          overflow: visible;
           padding: 0.28rem;
-          scroll-snap-type: x proximity;
-          scrollbar-width: none;
-        }
-
-        .viewer-tabs::-webkit-scrollbar {
-          display: none;
         }
 
         .viewer-tabs button,
         .viewer-tabs a {
-          flex: 0 0 auto;
-          min-width: max-content;
+          min-width: 0;
           min-height: 2.28rem;
-          padding-inline: 0.88rem;
+          padding-inline: 0.42rem;
           font-size: 0.82rem;
-          scroll-snap-align: start;
         }
 
         .league-switch button {
@@ -3699,6 +3802,16 @@ export class TournamentViewerPageComponent implements OnDestroy {
   setMatchView(view: 'all' | 'live'): void {
     this.activeMatchView = view;
     this.expandedMatchId = undefined;
+  }
+
+  showAllMatches(): void {
+    this.activeTab = 'matches';
+    this.setMatchView('all');
+  }
+
+  showLiveMatches(): void {
+    this.activeTab = 'matches';
+    this.setMatchView('live');
   }
 
   toggleMatch(match: Match): void {
