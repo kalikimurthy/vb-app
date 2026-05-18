@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Group, GroupTeam, Team, Tournament } from '../../core/models';
 
@@ -34,7 +36,7 @@ import { Group, GroupTeam, Team, Tournament } from '../../core/models';
           <p class="kicker">New group</p>
           <h3>Create a pool</h3>
           <form class="form-grid" (ngSubmit)="createGroup()">
-            <select [(ngModel)]="groupForm.tournament" name="groupTournament">
+            <select [(ngModel)]="groupForm.tournament" name="groupTournament" disabled>
               <option [ngValue]="undefined">Tournament</option>
               <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
             </select>
@@ -188,11 +190,14 @@ import { Group, GroupTeam, Team, Tournament } from '../../core/models';
 })
 export class GroupsPageComponent {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
+  private tournamentContext = inject(AdminTournamentContextService);
 
   tournaments: Tournament[] = [];
   teams: Team[] = [];
   groups: Group[] = [];
   groupTeams: GroupTeam[] = [];
+  selectedTournamentId = 0;
 
   groupForm: Partial<Group> = {};
   linkForm: Partial<GroupTeam> = {};
@@ -204,21 +209,39 @@ export class GroupsPageComponent {
   assignmentSuccess = '';
 
   constructor() {
-    this.load();
+    this.tournamentContext.tournaments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tournaments) => (this.tournaments = tournaments));
+    this.tournamentContext.selectedTournamentId$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        this.selectedTournamentId = id;
+        this.groupForm.tournament = id || undefined;
+        this.linkForm = {};
+        this.load();
+      });
+    this.tournamentContext.loadTournaments();
   }
 
   load(): void {
-    this.api.list<Tournament>('tournaments').subscribe((r) => (this.tournaments = r.results));
-    this.api.list<Team>('teams').subscribe((r) => (this.teams = r.results));
-    this.api.list<Group>('groups').subscribe((r) => (this.groups = r.results));
-    this.api.list<GroupTeam>('group-teams').subscribe((r) => (this.groupTeams = r.results));
+    const tournament = this.selectedTournamentId;
+    if (!tournament) {
+      this.teams = [];
+      this.groups = [];
+      this.groupTeams = [];
+      return;
+    }
+
+    this.api.list<Team>('teams', { tournament, page_size: 100 }).subscribe((r) => (this.teams = r.results));
+    this.api.list<Group>('groups', { tournament, page_size: 100 }).subscribe((r) => (this.groups = r.results));
+    this.api.list<GroupTeam>('group-teams', { group__tournament: tournament, page_size: 200 }).subscribe((r) => (this.groupTeams = r.results));
   }
 
   createGroup(): void {
     this.groupError = '';
     this.groupSuccess = '';
 
-    if (!this.groupForm.tournament) {
+    if (!this.selectedTournamentId) {
       this.groupError = 'Select a tournament before creating a group.';
       return;
     }
@@ -230,11 +253,11 @@ export class GroupsPageComponent {
 
     this.isCreatingGroup = true;
     this.api.create<Group>('groups', {
-      tournament: this.groupForm.tournament,
+      tournament: this.selectedTournamentId,
       name: this.groupForm.name.trim(),
     }).subscribe({
       next: () => {
-        this.groupForm = { tournament: this.groupForm.tournament, name: '' };
+        this.groupForm = { tournament: this.selectedTournamentId, name: '' };
         this.groupSuccess = 'Group created.';
         this.isCreatingGroup = false;
         this.load();

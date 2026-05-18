@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Court, Group, Match } from '../../core/models';
 import { formatMatchTime, getCourtName, getMatchFormatLabel, getMatchStageLabel } from './match-display.helpers';
@@ -35,19 +37,38 @@ import { formatMatchTime, getCourtName, getMatchFormatLabel, getMatchStageLabel 
 })
 export class CourtSchedulePageComponent {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
+  private tournamentContext = inject(AdminTournamentContextService);
   courts: Court[] = [];
   groups: Group[] = [];
   matches: Match[] = [];
   courtId = 0;
+  selectedTournamentId = 0;
 
   constructor() {
     this.api.list<Court>('courts').subscribe((r) => (this.courts = r.results));
-    this.api.list<Group>('groups').subscribe((r) => (this.groups = r.results));
-    this.load();
+    this.tournamentContext.selectedTournamentId$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        this.selectedTournamentId = id;
+        this.load();
+      });
+    this.tournamentContext.loadTournaments();
   }
 
   load(): void {
-    const params = this.courtId ? { court: this.courtId } : undefined;
+    if (!this.selectedTournamentId) {
+      this.groups = [];
+      this.matches = [];
+      return;
+    }
+
+    this.api.list<Group>('groups', { tournament: this.selectedTournamentId, page_size: 100 }).subscribe((r) => (this.groups = r.results));
+    const params: Record<string, number> = { tournament: this.selectedTournamentId, page_size: 250 };
+    if (this.courtId) {
+      params['court'] = this.courtId;
+    }
+
     this.api.list<Match>('matches', params).subscribe((r) => (this.matches = r.results));
   }
 

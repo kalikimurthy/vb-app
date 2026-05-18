@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Tournament } from '../../core/models';
 
@@ -202,6 +203,7 @@ import { Tournament } from '../../core/models';
 })
 export class TournamentsPageComponent {
   private api = inject(ApiService);
+  private tournamentContext = inject(AdminTournamentContextService);
 
   tournaments: Tournament[] = [];
   form: Tournament = { name: '', date: '', format: 'Top8' };
@@ -252,6 +254,7 @@ export class TournamentsPageComponent {
         this.isSavingTournament = false;
         this.tournamentSuccess = 'Tournament created.';
         this.load();
+        this.tournamentContext.loadTournaments();
       },
       error: (err) => {
         this.tournamentError = this.formatApiError(err);

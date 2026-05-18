@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Standing, Tournament } from '../../core/models';
 
@@ -13,7 +15,7 @@ import { Standing, Tournament } from '../../core/models';
     <article class="page grid">
       <h2>Standings</h2>
       <div class="grid two">
-        <select [(ngModel)]="tournamentId" (ngModelChange)="load()">
+        <select [(ngModel)]="tournamentId" (ngModelChange)="selectTournament($event)">
           <option [ngValue]="0">Select Tournament</option>
           <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
         </select>
@@ -33,13 +35,24 @@ import { Standing, Tournament } from '../../core/models';
 })
 export class StandingsPageComponent {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
+  private tournamentContext = inject(AdminTournamentContextService);
 
   tournaments: Tournament[] = [];
   standings: Standing[] = [];
   tournamentId = 0;
 
   constructor() {
-    this.api.list<Tournament>('tournaments').subscribe((r) => (this.tournaments = r.results));
+    this.tournamentContext.tournaments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tournaments) => (this.tournaments = tournaments));
+    this.tournamentContext.selectedTournamentId$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        this.tournamentId = id;
+        this.load();
+      });
+    this.tournamentContext.loadTournaments();
   }
 
   load(): void {
@@ -47,7 +60,11 @@ export class StandingsPageComponent {
       this.standings = [];
       return;
     }
-    this.api.list<Standing>('standings', { tournament: this.tournamentId }).subscribe((r) => (this.standings = r.results));
+    this.api.list<Standing>('standings', { tournament: this.tournamentId, ordering: 'rank', page_size: 100 }).subscribe((r) => (this.standings = r.results));
+  }
+
+  selectTournament(id: number): void {
+    this.tournamentContext.setSelectedTournament(Number(id));
   }
 
   recalculate(): void {

@@ -1,8 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Court, Group, Match, Team, Tournament } from '../../core/models';
 import {
@@ -113,7 +115,7 @@ import {
         </div>
 
         <form class="create-grid" (ngSubmit)="saveEdit()">
-          <select [(ngModel)]="editForm.tournament" name="editTournament">
+          <select [(ngModel)]="editForm.tournament" name="editTournament" disabled>
             <option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option>
           </select>
           <select [(ngModel)]="editForm.match_type" name="editMatchType">
@@ -164,7 +166,7 @@ import {
       <section class="panel create-panel">
         <h3>Create Match</h3>
         <form class="create-grid" (ngSubmit)="create()">
-          <select [(ngModel)]="form.tournament" name="tournament"><option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option></select>
+          <select [(ngModel)]="form.tournament" name="tournament" disabled><option *ngFor="let t of tournaments" [ngValue]="t.id">{{ t.name }}</option></select>
           <select [(ngModel)]="form.match_type" name="matchType"><option value="league">league</option><option value="knockout">knockout</option></select>
           <select [(ngModel)]="form.stage" name="stage">
             <option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</option>
@@ -466,12 +468,15 @@ import {
 })
 export class MatchesPageComponent {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
+  private tournamentContext = inject(AdminTournamentContextService);
 
   tournaments: Tournament[] = [];
   teams: Team[] = [];
   groups: Group[] = [];
   courts: Court[] = [];
   matches: Match[] = [];
+  selectedTournamentId = 0;
   isCreating = false;
   isGeneratingKnockout = false;
   isUpdating = false;
@@ -523,7 +528,17 @@ export class MatchesPageComponent {
   };
 
   constructor() {
-    this.load();
+    this.tournamentContext.tournaments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tournaments) => (this.tournaments = tournaments));
+    this.tournamentContext.selectedTournamentId$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        this.selectedTournamentId = id;
+        this.form.tournament = id;
+        this.load();
+      });
+    this.tournamentContext.loadTournaments();
   }
 
   get matchSections(): { title: string; matches: Match[] }[] {
@@ -568,16 +583,20 @@ export class MatchesPageComponent {
   }
 
   load(): void {
-    this.api.list<Tournament>('tournaments').subscribe((r) => {
-      this.tournaments = r.results;
-      if (!this.form.tournament && this.tournaments[0]?.id) {
-        this.form.tournament = this.tournaments[0].id;
-      }
-    });
-    this.api.list<Team>('teams').subscribe((r) => (this.teams = r.results));
-    this.api.list<Group>('groups').subscribe((r) => (this.groups = r.results));
+    const tournament = this.selectedTournamentId;
+    if (!tournament) {
+      this.teams = [];
+      this.groups = [];
+      this.matches = [];
+      this.api.list<Court>('courts', { page_size: 100 }).subscribe((r) => (this.courts = r.results));
+      return;
+    }
+
+    this.form.tournament = tournament;
+    this.api.list<Team>('teams', { tournament, page_size: 100 }).subscribe((r) => (this.teams = r.results));
+    this.api.list<Group>('groups', { tournament, page_size: 100 }).subscribe((r) => (this.groups = r.results));
     this.api.list<Court>('courts').subscribe((r) => (this.courts = r.results));
-    this.api.list<Match>('matches').subscribe((r) => (this.matches = r.results));
+    this.api.list<Match>('matches', { tournament, ordering: 'scheduled_time', page_size: 250 }).subscribe((r) => (this.matches = r.results));
   }
 
   create(): void {
@@ -626,7 +645,7 @@ export class MatchesPageComponent {
     this.knockoutError = '';
     this.knockoutSuccess = '';
 
-    const tournament = this.form.tournament || this.tournaments[0]?.id;
+    const tournament = this.selectedTournamentId;
     if (!tournament) {
       this.knockoutError = 'Select a tournament before generating knockout matches.';
       return;

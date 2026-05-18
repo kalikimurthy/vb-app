@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AdminTournamentContextService } from '../../core/admin-tournament-context.service';
 import { ApiService } from '../../core/api.service';
 import { Court, Group, Match, Team, Tournament } from '../../core/models';
 import {
@@ -219,15 +221,27 @@ import {
 })
 export class ScoreUpdatePageComponent {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
+  private tournamentContext = inject(AdminTournamentContextService);
 
   tournaments: Tournament[] = [];
   teams: Team[] = [];
   courts: Court[] = [];
   groups: Group[] = [];
   matches: Match[] = [];
+  selectedTournamentId = 0;
 
   constructor() {
-    this.load();
+    this.tournamentContext.tournaments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tournaments) => (this.tournaments = tournaments));
+    this.tournamentContext.selectedTournamentId$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        this.selectedTournamentId = id;
+        this.load();
+      });
+    this.tournamentContext.loadTournaments();
   }
 
   get matchSections(): { title: string; matches: Match[] }[] {
@@ -240,11 +254,19 @@ export class ScoreUpdatePageComponent {
   }
 
   load(): void {
-    this.api.list<Tournament>('tournaments').subscribe((r) => (this.tournaments = r.results));
-    this.api.list<Team>('teams').subscribe((r) => (this.teams = r.results));
+    const tournament = this.selectedTournamentId;
+    if (!tournament) {
+      this.teams = [];
+      this.groups = [];
+      this.matches = [];
+      this.api.list<Court>('courts', { page_size: 100 }).subscribe((r) => (this.courts = r.results));
+      return;
+    }
+
+    this.api.list<Team>('teams', { tournament, page_size: 100 }).subscribe((r) => (this.teams = r.results));
     this.api.list<Court>('courts').subscribe((r) => (this.courts = r.results));
-    this.api.list<Group>('groups').subscribe((r) => (this.groups = r.results));
-    this.api.list<Match>('matches').subscribe((r) => (this.matches = r.results));
+    this.api.list<Group>('groups', { tournament, page_size: 100 }).subscribe((r) => (this.groups = r.results));
+    this.api.list<Match>('matches', { tournament, ordering: 'scheduled_time', page_size: 250 }).subscribe((r) => (this.matches = r.results));
   }
 
   getTournamentName(id?: number | null): string {
