@@ -410,14 +410,14 @@ import {
                 </section>
               </div>
 
-              <div class="mobile-knockout-track mobile-bracket-board" aria-label="Mobile official knockout bracket">
+              <div class="mobile-knockout-list mobile-bracket-board" aria-label="Mobile official knockout bracket">
                 <section class="mobile-bracket-round">
                   <div class="mobile-round-title">
                     <span>Round 1</span>
                     <h4>Quarterfinals</h4>
                   </div>
 
-                  <ng-container *ngFor="let slot of quarterfinalSlots">
+                  <ng-container *ngFor="let slot of mobileQuarterfinalSlots">
                     <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: slot }"></ng-container>
                   </ng-container>
                 </section>
@@ -434,19 +434,21 @@ import {
                 </section>
 
                 <section class="mobile-bracket-round mobile-final-round">
-                  <div class="mobile-round-title">
-                    <span>Championship</span>
-                    <h4>Final</h4>
-                  </div>
-
-                  <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: finalSlot }"></ng-container>
-
                   <div class="mobile-round-title mobile-placement-title">
                     <span>Placement</span>
                     <h4>3rd Place</h4>
                   </div>
 
                   <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: thirdPlaceSlot }"></ng-container>
+                </section>
+
+                <section class="mobile-bracket-round mobile-final-round">
+                  <div class="mobile-round-title">
+                    <span>Championship</span>
+                    <h4>Final</h4>
+                  </div>
+
+                  <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: finalSlot }"></ng-container>
                 </section>
 
                 <section class="mobile-bracket-round champion-round-mobile">
@@ -2520,7 +2522,7 @@ import {
         display: flex;
       }
 
-      .mobile-knockout-track {
+      .mobile-knockout-list {
         display: none;
       }
 
@@ -2853,52 +2855,35 @@ import {
           display: none;
         }
 
-        .mobile-knockout-track {
-          display: flex;
-          gap: 0.75rem;
+        .mobile-knockout-list {
+          display: grid;
+          gap: 0.72rem;
           width: 100%;
           max-width: 100%;
           min-width: 0;
-          box-sizing: border-box;
-          padding: 0.08rem 0.85rem 0.75rem 0;
-          overflow-x: auto;
-          overflow-y: hidden;
-          overscroll-behavior-inline: contain;
-          scroll-snap-type: x mandatory;
-          scroll-padding-inline: 0 0.85rem;
-          scrollbar-width: none;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .mobile-knockout-track::-webkit-scrollbar {
-          display: none;
+          overflow: visible;
         }
 
         .mobile-bracket-round {
-          position: relative;
-          flex: 0 0 min(300px, calc(100vw - 2rem));
           display: grid;
-          align-content: start;
-          gap: 0.56rem;
+          gap: 0.48rem;
           min-width: 0;
-          max-width: min(300px, calc(100vw - 2rem));
+          width: 100%;
           box-sizing: border-box;
-          scroll-snap-align: start;
-          scroll-snap-stop: always;
-        }
-
-        .mobile-semifinal-round {
-          grid-template-rows: auto repeat(2, minmax(13.15rem, auto));
+          padding: 0.68rem;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          border-radius: 1rem;
+          background:
+            linear-gradient(135deg, rgba(37, 99, 235, 0.07), transparent 58%),
+            rgba(15, 23, 42, 0.48);
+          box-shadow: 0 12px 26px rgba(2, 6, 23, 0.2);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
 
         .mobile-semi-pair-slot {
           display: grid;
-          align-items: center;
-          min-height: 13.15rem;
-        }
-
-        .mobile-bracket-round:not(:last-child)::after {
-          display: none;
+          min-width: 0;
         }
 
         .mobile-knockout-card {
@@ -3130,31 +3115,10 @@ import {
           line-height: 1.25;
         }
 
-        .mobile-final-round {
-          flex-basis: min(300px, calc(100vw - 2rem));
-        }
-
-        .mobile-final-round .center-final {
-          min-height: 5.9rem;
-          border-color: rgba(245, 158, 11, 0.5);
-          box-shadow:
-            0 0 0 1px rgba(245, 158, 11, 0.1),
-            0 10px 22px rgba(2, 6, 23, 0.24);
-        }
-
-        .mobile-final-round .third-place-match {
-          min-height: 5.35rem;
-          opacity: 0.88;
-        }
-
-        .champion-round-mobile {
-          flex-basis: min(300px, calc(100vw - 2rem));
-        }
-
         .mobile-champion-card {
           width: 100%;
           box-sizing: border-box;
-          min-height: 5.9rem;
+          min-height: 5.4rem;
           align-content: center;
           padding: 0.62rem;
           border-radius: 0.95rem;
@@ -3498,6 +3462,15 @@ export class TournamentViewerPageComponent implements OnDestroy {
     { stage: 'quarter_final_2', label: 'QF2', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
     { stage: 'quarter_final_3', label: 'QF3', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
   ];
+
+  get mobileQuarterfinalSlots() {
+    return [
+      this.leftQuarterfinalSlots[0],
+      this.rightQuarterfinalSlots[0],
+      this.rightQuarterfinalSlots[1],
+      this.leftQuarterfinalSlots[1],
+    ];
+  }
 
   constructor() {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab');
