@@ -161,7 +161,12 @@ import {
                   [ngClass]="getProjectionClass(team.id)"
                 >
                   <div class="team-row-main">
-                    <strong>{{ team.name }}</strong>
+                    <span class="team-title-with-avatar">
+                      <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyleFromName(team.name)">
+                        {{ getTeamAvatarLabelFromName(team.name) }}
+                      </span>
+                      <strong>{{ team.name }}</strong>
+                    </span>
                     <span class="projection-badge">{{ getProjectionForTeam(team.id) }}</span>
                   </div>
 
@@ -231,9 +236,14 @@ import {
               </div>
 
               <div class="standing-main">
-                <strong>{{ getStandingTeamName(standing) }}</strong>
-                <small *ngIf="getPoolLabel(standing)">{{ getPoolLabel(standing) }}</small>
-                <small class="tie-note" *ngIf="getStandingTiebreakNote(standing, i) as note">{{ note }}</small>
+                <span class="team-avatar" [ngStyle]="getTeamAvatarStyle(standing.team)">
+                  {{ getTeamAvatarLabel(standing.team) }}
+                </span>
+                <div class="standing-team-copy">
+                  <strong>{{ getStandingTeamName(standing) }}</strong>
+                  <small *ngIf="getPoolLabel(standing)">{{ getPoolLabel(standing) }}</small>
+                  <small class="tie-note" *ngIf="getStandingTiebreakNote(standing, i) as note">{{ note }}</small>
+                </div>
               </div>
 
               <div class="standing-stats">
@@ -571,7 +581,10 @@ import {
             </div>
 
             <div class="match-row-team home">
-              <span>{{ getTeamName(match.team_a) }}</span>
+              <span class="team-avatar" [ngStyle]="getTeamAvatarStyle(match.team_a)">
+                {{ getTeamAvatarLabel(match.team_a) }}
+              </span>
+              <span class="team-name">{{ getTeamName(match.team_a) }}</span>
             </div>
 
             <div class="match-row-score">
@@ -579,13 +592,27 @@ import {
             </div>
 
             <div class="match-row-team away">
-              <span>{{ getTeamName(match.team_b) }}</span>
+              <span class="team-avatar" [ngStyle]="getTeamAvatarStyle(match.team_b)">
+                {{ getTeamAvatarLabel(match.team_b) }}
+              </span>
+              <span class="team-name">{{ getTeamName(match.team_b) }}</span>
             </div>
 
             <span class="compact-court">{{ getCourtName(match) }}</span>
           </div>
 
           <div class="match-expanded-details" *ngIf="expandedMatchId === match.id">
+            <div class="match-expanded-scoreline">
+              <span>
+                <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_a)">{{ getTeamAvatarLabel(match.team_a) }}</span>
+                <strong>{{ getTeamName(match.team_a) }}</strong>
+              </span>
+              <em>{{ match.score_a }} - {{ match.score_b }}</em>
+              <span>
+                <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_b)">{{ getTeamAvatarLabel(match.team_b) }}</span>
+                <strong>{{ getTeamName(match.team_b) }}</strong>
+              </span>
+            </div>
             <div><span>Court</span><strong>{{ getCourtName(match) }}</strong></div>
             <div><span>Referee</span><strong>{{ match.referee_name || 'TBD' }}</strong></div>
             <div><span>Group / Division</span><strong>{{ getMatchStageLabel(match) || 'Unassigned' }}</strong></div>
@@ -633,13 +660,19 @@ import {
 
           <ng-container *ngIf="getOfficialMatch(slot.stage) as match; else mobileCardPlaceholder">
             <div class="mobile-card-score">
-              <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
-                {{ getTeamName(match.team_a) }}
-              </strong>
+              <span class="bracket-team-side">
+                <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_a)">{{ getTeamAvatarLabel(match.team_a) }}</span>
+                <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
+                  {{ getTeamName(match.team_a) }}
+                </strong>
+              </span>
               <span>{{ match.score_a }} - {{ match.score_b }}</span>
-              <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
-                {{ getTeamName(match.team_b) }}
-              </strong>
+              <span class="bracket-team-side away">
+                <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_b)">{{ getTeamAvatarLabel(match.team_b) }}</span>
+                <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
+                  {{ getTeamName(match.team_b) }}
+                </strong>
+              </span>
             </div>
             <small>{{ match.status }}</small>
           </ng-container>
@@ -660,13 +693,19 @@ import {
           <strong>{{ getMatchFormatLabel(match) || match.status }}</strong>
         </div>
         <div class="official-bracket-score">
-          <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
-            {{ getTeamName(match.team_a) }}
-          </strong>
+          <span class="bracket-team-side">
+            <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_a)">{{ getTeamAvatarLabel(match.team_a) }}</span>
+            <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
+              {{ getTeamName(match.team_a) }}
+            </strong>
+          </span>
           <span>{{ match.score_a }} - {{ match.score_b }}</span>
-          <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
-            {{ getTeamName(match.team_b) }}
-          </strong>
+          <span class="bracket-team-side away">
+            <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_b)">{{ getTeamAvatarLabel(match.team_b) }}</span>
+            <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
+              {{ getTeamName(match.team_b) }}
+            </strong>
+          </span>
         </div>
         <div class="official-meta">
           <span>{{ match.status }}</span>
@@ -709,6 +748,9 @@ import {
 
       <ng-template #teamSeed let-team>
         <div class="seed-number">#{{ team.seed || team.overallRank }}</div>
+        <span class="team-avatar" [ngStyle]="getTeamAvatarStyleFromName(team.teamName)">
+          {{ getTeamAvatarLabelFromName(team.teamName) }}
+        </span>
         <div class="seed-main">
           <strong>{{ team.teamName }}</strong>
           <small>{{ team.groupName }} - Overall rank {{ team.overallRank }}</small>
@@ -725,6 +767,9 @@ import {
       <ng-template #compactSeed let-team let-winner="winner">
         <div class="compact-seed-row" [class.projected-winner]="winner?.teamId === team.teamId">
           <span class="seed-pill">#{{ team.seed }}</span>
+          <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyleFromName(team.teamName)">
+            {{ getTeamAvatarLabelFromName(team.teamName) }}
+          </span>
           <div>
             <strong>{{ team.teamName }}</strong>
             <small>{{ team.groupName }} - Overall {{ team.overallRank }} - {{ team.wins }}-{{ team.losses }} - Diff {{ team.pointDifferential }}</small>
@@ -738,7 +783,11 @@ import {
           <span>{{ getCourtName(match) }}</span>
           <span>{{ match.status }}</span>
         </div>
-        <h3>{{ getTeamName(match.team_a) }} vs {{ getTeamName(match.team_b) }}</h3>
+        <h3 class="summary-teams">
+          <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_a)">{{ getTeamAvatarLabel(match.team_a) }}</span>
+          {{ getTeamName(match.team_a) }} vs {{ getTeamName(match.team_b) }}
+          <span class="team-avatar tiny" [ngStyle]="getTeamAvatarStyle(match.team_b)">{{ getTeamAvatarLabel(match.team_b) }}</span>
+        </h3>
         <p>
           <strong>{{ match.score_a }} - {{ match.score_b }}</strong>
           <span *ngIf="match.referee_name"> - Ref: {{ match.referee_name }}</span>
@@ -774,6 +823,44 @@ import {
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: 0.5rem;
+      }
+
+      .team-avatar {
+        flex: 0 0 auto;
+        display: inline-grid;
+        place-items: center;
+        width: 1.95rem;
+        height: 1.95rem;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        color: #f8fafc;
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0;
+        line-height: 1;
+        text-transform: uppercase;
+        box-shadow:
+          0 8px 18px rgba(2, 6, 23, 0.32),
+          inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      }
+
+      .team-avatar.tiny {
+        width: 1.45rem;
+        height: 1.45rem;
+        font-size: 0.54rem;
+      }
+
+      .summary-teams,
+      .team-title-with-avatar {
+        display: inline-flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .team-title-with-avatar strong,
+      .summary-teams {
+        min-width: 0;
       }
 
       .trust-labels {
@@ -1277,7 +1364,7 @@ import {
 
       .compact-seed-row {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto auto minmax(0, 1fr);
         gap: 0.58rem;
         align-items: center;
         min-width: 0;
@@ -1406,7 +1493,7 @@ import {
       .seed-card,
       .matchup-team {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto auto minmax(0, 1fr);
         gap: 0.65rem;
         padding: 0.75rem;
         border: 1px solid var(--glass-border);
@@ -1641,11 +1728,18 @@ import {
 
       .standing-main {
         min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .standing-team-copy {
+        min-width: 0;
         display: grid;
         gap: 0.25rem;
       }
 
-      .standing-main > strong {
+      .standing-team-copy > strong {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1718,7 +1812,13 @@ import {
 
       .viewer-card.live {
         border-color: rgba(245, 158, 11, 0.38);
-        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+        background:
+          linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent 46%),
+          rgba(15, 23, 42, 0.64);
+        box-shadow:
+          0 0 0 1px rgba(245, 158, 11, 0.14),
+          0 18px 38px rgba(245, 158, 11, 0.08),
+          0 14px 34px rgba(2, 6, 23, 0.28);
       }
 
       .viewer-card.completed {
@@ -1745,6 +1845,23 @@ import {
         width: 0.18rem;
         height: auto;
         border-radius: 0;
+      }
+
+      .match-row-card.live::before {
+        background: linear-gradient(180deg, #f59e0b, #22c55e);
+      }
+
+      .match-row-card.live::after {
+        content: "";
+        position: absolute;
+        top: 0.78rem;
+        right: 0.78rem;
+        width: 0.46rem;
+        height: 0.46rem;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.46);
+        animation: livePulse 1.8s ease-out infinite;
       }
 
       .match-row-card:hover {
@@ -1797,6 +1914,7 @@ import {
       .live .match-row-status strong {
         background: rgba(245, 158, 11, 0.18);
         color: #fcd34d;
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.14);
       }
 
       .completed .match-row-status strong {
@@ -1815,12 +1933,15 @@ import {
 
       .match-row-team {
         min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.42rem;
         color: var(--ink);
         font-size: 0.91rem;
         font-weight: 900;
       }
 
-      .match-row-team span {
+      .match-row-team .team-name {
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1828,7 +1949,12 @@ import {
       }
 
       .match-row-team.away {
+        justify-content: flex-end;
         text-align: right;
+      }
+
+      .match-row-team.away .team-avatar {
+        order: 2;
       }
 
       .match-row-score {
@@ -1842,6 +1968,14 @@ import {
         text-align: center;
         white-space: nowrap;
         letter-spacing: 0;
+      }
+
+      .live .match-row-score {
+        background:
+          linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(245, 158, 11, 0.08)),
+          rgba(2, 6, 23, 0.48);
+        color: #f8fafc;
+        box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.16);
       }
 
       .compact-court {
@@ -1865,6 +1999,35 @@ import {
         margin-top: 0.5rem;
         padding-top: 0.5rem;
         border-top: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .match-expanded-scoreline {
+        grid-column: 1 / -1;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .match-expanded-scoreline > span {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .match-expanded-scoreline > span:last-child {
+        justify-content: flex-end;
+        text-align: right;
+      }
+
+      .match-expanded-scoreline em {
+        padding: 0.24rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(2, 6, 23, 0.38);
+        color: var(--ink);
+        font-style: normal;
+        font-weight: 950;
       }
 
       .match-expanded-details div {
@@ -1896,6 +2059,33 @@ import {
         color: var(--ink);
         font-size: 0.74rem;
         font-weight: 900;
+      }
+
+      .match-expanded-scoreline .team-avatar {
+        display: inline-grid;
+      }
+
+      .match-expanded-scoreline > span {
+        display: flex;
+      }
+
+      .match-expanded-scoreline span,
+      .match-expanded-scoreline strong {
+        white-space: nowrap;
+      }
+
+      @keyframes livePulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.46);
+        }
+
+        70% {
+          box-shadow: 0 0 0 0.45rem rgba(34, 197, 94, 0);
+        }
+
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
       }
 
       .card-meta {
@@ -2005,6 +2195,22 @@ import {
         gap: 0.38rem;
       }
 
+      .bracket-team-side {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .bracket-team-side.away {
+        justify-content: flex-end;
+        text-align: right;
+      }
+
+      .bracket-team-side.away .team-avatar {
+        order: 2;
+      }
+
       .official-bracket-score strong {
         min-width: 0;
         overflow: hidden;
@@ -2031,7 +2237,7 @@ import {
         text-decoration-color: rgba(203, 213, 225, 0.5);
       }
 
-      .official-bracket-score span {
+      .official-bracket-score > span:not(.bracket-team-side) {
         padding: 0.22rem 0.38rem;
         border-radius: 0.65rem;
         background: rgba(15, 23, 42, 0.6);
@@ -2646,11 +2852,11 @@ import {
           font-weight: 900;
         }
 
-        .mobile-card-score strong:last-child {
+        .mobile-card-score .bracket-team-side.away strong {
           text-align: right;
         }
 
-        .mobile-card-score span {
+        .mobile-card-score > span:not(.bracket-team-side) {
           padding: 0.18rem 0.32rem;
           border-radius: 0.62rem;
           background: rgba(2, 6, 23, 0.36);
@@ -3021,7 +3227,18 @@ import {
 
         .match-row-team.away {
           grid-area: away;
+          justify-content: flex-start;
           text-align: left;
+        }
+
+        .match-row-team.away .team-avatar {
+          order: 0;
+        }
+
+        .match-row-team .team-avatar {
+          width: 1.6rem;
+          height: 1.6rem;
+          font-size: 0.58rem;
         }
 
         .match-row-score {
@@ -3444,6 +3661,38 @@ export class TournamentViewerPageComponent implements OnDestroy {
     return match.match_type === 'knockout' ? 'Knockout' : 'Pool / group stage';
   }
 
+  getTeamAvatarLabel(teamId?: number | null): string {
+    return this.getTeamAvatarLabelFromName(this.getTeamName(teamId));
+  }
+
+  getTeamAvatarLabelFromName(name?: string | null): string {
+    const cleanName = (name || 'Team').trim();
+    const words = cleanName.split(/\s+/).filter(Boolean);
+    const letters = words.length > 1 ? `${words[0][0]}${words[1][0]}` : cleanName.slice(0, 2);
+    return letters.toUpperCase();
+  }
+
+  getTeamAvatarStyle(teamId?: number | null): Record<string, string> {
+    return this.getTeamAvatarStyleFromName(this.getTeamName(teamId));
+  }
+
+  getTeamAvatarStyleFromName(name?: string | null): Record<string, string> {
+    const gradients = [
+      'linear-gradient(135deg, #2563eb, #14b8a6)',
+      'linear-gradient(135deg, #7c3aed, #2563eb)',
+      'linear-gradient(135deg, #0f766e, #22c55e)',
+      'linear-gradient(135deg, #f59e0b, #ef4444)',
+      'linear-gradient(135deg, #0891b2, #4f46e5)',
+      'linear-gradient(135deg, #be123c, #f97316)',
+      'linear-gradient(135deg, #16a34a, #0ea5e9)',
+      'linear-gradient(135deg, #9333ea, #db2777)',
+    ];
+
+    return {
+      background: gradients[this.getNameHash(name || 'Team') % gradients.length],
+    };
+  }
+
   getOfficialRoundMatches(stage: string): Match[] {
     return this.officialKnockoutMatches
       .filter((match) => {
@@ -3513,6 +3762,10 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   private hasSameWinTotal(a?: Standing, b?: Standing): boolean {
     return Boolean(a && b && a.wins === b.wins);
+  }
+
+  private getNameHash(name: string): number {
+    return [...name].reduce((hash, char) => hash + char.charCodeAt(0), 0);
   }
 
   private getTiebreakReason(a: Standing, b: Standing): string {
