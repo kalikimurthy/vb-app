@@ -298,105 +298,171 @@ import {
               <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds</span>
             </div>
 
-            <div class="bracket-board official-board bracket-arena" *ngIf="bracketMode === 'official'">
-              <section class="bracket-lane qf-lane left-lane">
-                <div class="round-heading">
-                  <span>Round 1</span>
-                  <h4>Quarterfinals</h4>
+            <div class="official-bracket-layout" *ngIf="bracketMode === 'official'">
+              <div class="desktop-knockout-board desktop-bracket-board" aria-label="Official knockout bracket">
+                <section class="bracket-pair bracket-pair-left">
+                  <div class="round-heading qf-heading">
+                    <span>Round 1</span>
+                    <h4>Quarterfinals</h4>
+                  </div>
+
+                  <div class="qf-pair-stack">
+                    <article class="bracket-match bracket-node" *ngFor="let slot of leftQuarterfinalSlots">
+                      <ng-container *ngTemplateOutlet="officialSlot; context: { slot: slot }"></ng-container>
+                    </article>
+                  </div>
+
+                  <div class="round-heading sf-heading">
+                    <span>Round 2</span>
+                    <h4>Semifinals</h4>
+                  </div>
+
+                  <article class="bracket-match bracket-node semifinal-node">
+                    <ng-container *ngTemplateOutlet="officialSlot; context: { slot: semifinalSlots[0] }"></ng-container>
+                  </article>
+                </section>
+
+                <section class="bracket-column final-column">
+                  <div class="round-heading center-heading">
+                    <span>Championship</span>
+                    <h4>Final</h4>
+                  </div>
+
+                  <article class="bracket-match bracket-node center-final">
+                    <ng-container *ngTemplateOutlet="officialSlot; context: { slot: finalSlot }"></ng-container>
+                  </article>
+
+                  <article class="champion-card compact-champion">
+                    <span class="projected-badge">Champion TBD</span>
+                    <strong>{{ officialChampionName }}</strong>
+                    <small>{{ officialChampionName === 'Champion TBD' ? 'Champion appears after the official final is completed.' : 'Official final completed.' }}</small>
+                  </article>
+
+                  <div class="round-heading center-heading third-heading">
+                    <span>Placement</span>
+                    <h4>3rd Place</h4>
+                  </div>
+
+                  <article class="bracket-match bracket-node third-place-match">
+                    <ng-container *ngTemplateOutlet="officialSlot; context: { slot: thirdPlaceSlot }"></ng-container>
+                  </article>
+                </section>
+
+                <section class="bracket-pair bracket-pair-right">
+                  <div class="round-heading sf-heading">
+                    <span>Round 2</span>
+                    <h4>Semifinals</h4>
+                  </div>
+
+                  <article class="bracket-match bracket-node semifinal-node">
+                    <ng-container *ngTemplateOutlet="officialSlot; context: { slot: semifinalSlots[1] }"></ng-container>
+                  </article>
+
+                  <div class="round-heading qf-heading">
+                    <span>Round 1</span>
+                    <h4>Quarterfinals</h4>
+                  </div>
+
+                  <div class="qf-pair-stack">
+                    <article class="bracket-match bracket-node" *ngFor="let slot of rightQuarterfinalSlots">
+                      <ng-container *ngTemplateOutlet="officialSlot; context: { slot: slot }"></ng-container>
+                    </article>
+                  </div>
+                </section>
+              </div>
+
+              <div class="mobile-knockout-track mobile-bracket-board" aria-label="Mobile official knockout bracket">
+                <section class="mobile-bracket-round">
+                  <div class="mobile-round-title">
+                    <span>Round 1</span>
+                    <h4>Quarterfinals</h4>
+                  </div>
+
+                  <ng-container *ngFor="let slot of quarterfinalSlots">
+                    <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: slot }"></ng-container>
+                  </ng-container>
+                </section>
+
+                <section class="mobile-bracket-round mobile-semifinal-round">
+                  <div class="mobile-round-title">
+                    <span>Round 2</span>
+                    <h4>Semifinals</h4>
+                  </div>
+
+                  <div class="mobile-semi-pair-slot" *ngFor="let slot of semifinalSlots">
+                    <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: slot }"></ng-container>
+                  </div>
+                </section>
+
+                <section class="mobile-bracket-round mobile-final-round">
+                  <div class="mobile-round-title">
+                    <span>Championship</span>
+                    <h4>Final</h4>
+                  </div>
+
+                  <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: finalSlot }"></ng-container>
+
+                  <div class="mobile-round-title mobile-placement-title">
+                    <span>Placement</span>
+                    <h4>3rd Place</h4>
+                  </div>
+
+                  <ng-container *ngTemplateOutlet="mobileBracketCard; context: { slot: thirdPlaceSlot }"></ng-container>
+                </section>
+
+                <section class="mobile-bracket-round champion-round-mobile">
+                  <div class="mobile-round-title">
+                    <span>Champion</span>
+                    <h4>Winner</h4>
+                  </div>
+
+                  <article class="champion-card compact-champion mobile-champion-card">
+                    <span class="projected-badge">Champion TBD</span>
+                    <strong>{{ officialChampionName }}</strong>
+                    <small>{{ officialChampionName === 'Champion TBD' ? 'Champion appears after the official final is completed.' : 'Official final completed.' }}</small>
+                  </article>
+                </section>
+              </div>
+
+              <section class="mobile-bracket-detail-panel" *ngIf="selectedMobileBracketSlot as slot">
+                <div class="mobile-detail-heading">
+                  <span>{{ slot.label }}</span>
+                  <strong>{{ slot.stage === 'final' ? 'Final' : slot.stage === 'third_place' ? '3rd Place' : slot.label }}</strong>
                 </div>
 
-                <article class="bracket-match connector-right" *ngFor="let slot of leftQuarterfinalSlots">
-                  <ng-container *ngIf="getOfficialMatch(slot.stage) as officialMatch; else officialPlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: slot.label }"></ng-container>
-                  </ng-container>
-                  <ng-template #officialPlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: slot.label, title: slot.title, body: slot.body, format: slot.format }"></ng-container>
-                  </ng-template>
-                </article>
-              </section>
+                <ng-container *ngIf="getOfficialMatch(slot.stage) as match; else mobilePlaceholderDetail">
+                  <div class="mobile-detail-score">
+                    <strong>{{ getTeamName(match.team_a) }}</strong>
+                    <span>{{ match.score_a }} - {{ match.score_b }}</span>
+                    <strong>{{ getTeamName(match.team_b) }}</strong>
+                  </div>
 
-              <section class="bracket-lane sf-lane left-lane">
-                <div class="round-heading">
-                  <span>Round 2</span>
-                  <h4>Semifinals</h4>
-                </div>
+                  <div class="mobile-detail-grid">
+                    <div><span>Court</span><strong>{{ getCourtName(match) }}</strong></div>
+                    <div><span>Referee</span><strong>{{ match.referee_name || 'TBD' }}</strong></div>
+                    <div><span>Time</span><strong>{{ formatMatchTime(match.scheduled_time) }}</strong></div>
+                    <div><span>Status</span><strong>{{ match.status }}</strong></div>
+                    <div><span>Division</span><strong>{{ selectedBracket === 'champions' ? 'Division A' : 'Division B' }}</strong></div>
+                    <div><span>Round</span><strong>{{ match.stage }}</strong></div>
+                    <div><span>Best of</span><strong>{{ match.best_of || 1 }}</strong></div>
+                    <div><span>Full score</span><strong>{{ match.score_a }} - {{ match.score_b }}</strong></div>
+                  </div>
 
-                <article class="bracket-match connector-right connector-left">
-                  <ng-container *ngIf="getOfficialMatch('semi_final_1') as officialMatch; else sfOnePlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF1' }"></ng-container>
-                  </ng-container>
-                  <ng-template #sfOnePlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF1', title: 'Winner QF1 vs Winner QF4', body: 'Winner QF1 vs Winner QF4', format: 'Best of 1' }"></ng-container>
-                  </ng-template>
-                </article>
-              </section>
+                  <p class="mobile-series-note" *ngIf="(match.best_of || 1) > 1">
+                    Final · Best of 3. Set-by-set scoring not available yet. Main score shows sets won.
+                  </p>
+                </ng-container>
 
-              <section class="bracket-center-lane">
-                <div class="round-heading center-heading">
-                  <span>Championship path</span>
-                  <h4>Final</h4>
-                </div>
-
-                <article class="bracket-match final-match center-final">
-                  <ng-container *ngIf="getOfficialMatch('final') as officialMatch; else finalPlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'F' }"></ng-container>
-                  </ng-container>
-                  <ng-template #finalPlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'F', title: 'Winner SF1 vs Winner SF2', body: 'Winner SF1 vs Winner SF2', format: 'Best of 3' }"></ng-container>
-                  </ng-template>
-                </article>
-
-                <article class="champion-card compact-champion">
-                  <span class="projected-badge">Champion TBD</span>
-                  <strong>{{ officialChampionName }}</strong>
-                  <small>{{ officialChampionName === 'Champion TBD' ? 'Champion appears after the official final is completed.' : 'Official final completed.' }}</small>
-                </article>
-
-                <div class="round-heading center-heading third-heading">
-                  <span>Placement</span>
-                  <h4>3rd Place Match</h4>
-                </div>
-
-                <article class="bracket-match third-place-match">
-                  <ng-container *ngIf="getOfficialMatch('third_place') as officialMatch; else thirdPlacePlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: '3RD' }"></ng-container>
-                  </ng-container>
-                  <ng-template #thirdPlacePlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: '3RD', title: 'Loser SF1 vs Loser SF2', body: 'Loser SF1 vs Loser SF2', format: 'Best of 1' }"></ng-container>
-                  </ng-template>
-                </article>
-              </section>
-
-              <section class="bracket-lane sf-lane right-lane">
-                <div class="round-heading">
-                  <span>Round 2</span>
-                  <h4>Semifinals</h4>
-                </div>
-
-                <article class="bracket-match connector-left">
-                  <ng-container *ngIf="getOfficialMatch('semi_final_2') as officialMatch; else sfTwoPlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: 'SF2' }"></ng-container>
-                  </ng-container>
-                  <ng-template #sfTwoPlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: 'SF2', title: 'Winner QF2 vs Winner QF3', body: 'Winner QF2 vs Winner QF3', format: 'Best of 1' }"></ng-container>
-                  </ng-template>
-                </article>
-              </section>
-
-              <section class="bracket-lane qf-lane right-lane">
-                <div class="round-heading">
-                  <span>Round 1</span>
-                  <h4>Quarterfinals</h4>
-                </div>
-
-                <article class="bracket-match connector-left" *ngFor="let slot of rightQuarterfinalSlots">
-                  <ng-container *ngIf="getOfficialMatch(slot.stage) as officialMatch; else officialPlaceholder">
-                    <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: slot.label }"></ng-container>
-                  </ng-container>
-                  <ng-template #officialPlaceholder>
-                    <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: slot.label, title: slot.title, body: slot.body, format: slot.format }"></ng-container>
-                  </ng-template>
-                </article>
+                <ng-template #mobilePlaceholderDetail>
+                  <div class="mobile-detail-grid">
+                    <div><span>Status</span><strong>Scheduled</strong></div>
+                    <div><span>Format</span><strong>{{ slot.format }}</strong></div>
+                    <div><span>Court</span><strong>TBD</strong></div>
+                    <div><span>Referee</span><strong>TBD</strong></div>
+                    <div><span>Round</span><strong>{{ slot.stage }}</strong></div>
+                    <div><span>Teams</span><strong>{{ slot.title }}</strong></div>
+                  </div>
+                </ng-template>
               </section>
             </div>
 
@@ -518,15 +584,75 @@ import {
         </article>
       </ng-template>
 
-      <ng-template #officialBracketMatch let-match let-label="label">
+      <ng-template #officialSlot let-slot="slot">
+        <div
+          class="bracket-node-body"
+          [class.expanded]="expandedBracketStage === slot.stage"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="expandedBracketStage === slot.stage"
+          (click)="toggleBracketStage(slot.stage)"
+          (keyup.enter)="toggleBracketStage(slot.stage)"
+        >
+          <ng-container *ngIf="getOfficialMatch(slot.stage) as officialMatch; else officialSlotPlaceholder">
+            <ng-container *ngTemplateOutlet="officialBracketMatch; context: { $implicit: officialMatch, label: slot.label, stage: slot.stage }"></ng-container>
+          </ng-container>
+          <ng-template #officialSlotPlaceholder>
+            <ng-container *ngTemplateOutlet="placeholderBracketMatch; context: { label: slot.label, title: slot.title, body: slot.body, format: slot.format, stage: slot.stage }"></ng-container>
+          </ng-template>
+        </div>
+      </ng-template>
+
+      <ng-template #mobileBracketCard let-slot="slot">
+        <button
+          type="button"
+          class="mobile-knockout-card"
+          [class.selected]="selectedMobileBracketStage === slot.stage"
+          [class.final-card]="slot.stage === 'final'"
+          [class.third-card]="slot.stage === 'third_place'"
+          (click)="selectMobileBracketStage(slot.stage)"
+        >
+          <div class="mobile-card-top">
+            <span>{{ slot.label }}</span>
+            <strong>{{ slot.format }}</strong>
+          </div>
+
+          <ng-container *ngIf="getOfficialMatch(slot.stage) as match; else mobileCardPlaceholder">
+            <div class="mobile-card-score">
+              <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
+                {{ getTeamName(match.team_a) }}
+              </strong>
+              <span>{{ match.score_a }} - {{ match.score_b }}</span>
+              <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
+                {{ getTeamName(match.team_b) }}
+              </strong>
+            </div>
+            <small>{{ match.status }}</small>
+          </ng-container>
+
+          <ng-template #mobileCardPlaceholder>
+            <div class="mobile-card-score placeholder">
+              <strong>{{ slot.title }}</strong>
+              <span>0 - 0</span>
+            </div>
+            <small>Scheduled</small>
+          </ng-template>
+        </button>
+      </ng-template>
+
+      <ng-template #officialBracketMatch let-match let-label="label" let-stage="stage">
         <div class="matchup-title">
           <span>{{ label }}</span>
           <strong>{{ getMatchFormatLabel(match) || match.status }}</strong>
         </div>
         <div class="official-bracket-score">
-          <strong>{{ getTeamName(match.team_a) }}</strong>
+          <strong [class.winning-team]="isBracketWinner(match, 'a')" [class.losing-team]="isBracketLoser(match, 'a')">
+            {{ getTeamName(match.team_a) }}
+          </strong>
           <span>{{ match.score_a }} - {{ match.score_b }}</span>
-          <strong>{{ getTeamName(match.team_b) }}</strong>
+          <strong [class.winning-team]="isBracketWinner(match, 'b')" [class.losing-team]="isBracketLoser(match, 'b')">
+            {{ getTeamName(match.team_b) }}
+          </strong>
         </div>
         <div class="official-meta">
           <span>{{ match.status }}</span>
@@ -534,9 +660,17 @@ import {
           <span>{{ formatMatchTime(match.scheduled_time) }}</span>
           <span>Ref: {{ match.referee_name || 'TBD' }}</span>
         </div>
+        <div class="bracket-expanded-details" *ngIf="stage && expandedBracketStage === stage">
+          <div><span>Format</span><strong>{{ getMatchFormatLabel(match) || 'Best of 1' }}</strong></div>
+          <div><span>Status</span><strong>{{ match.status }}</strong></div>
+          <div><span>Court</span><strong>{{ getCourtName(match) }}</strong></div>
+          <div><span>Referee</span><strong>{{ match.referee_name || 'TBD' }}</strong></div>
+          <div><span>Time</span><strong>{{ formatMatchTime(match.scheduled_time) }}</strong></div>
+          <div><span>Series</span><strong>{{ getSeriesSummary(match) }}</strong></div>
+        </div>
       </ng-template>
 
-      <ng-template #placeholderBracketMatch let-label="label" let-title="title" let-format="format">
+      <ng-template #placeholderBracketMatch let-label="label" let-title="title" let-format="format" let-stage="stage">
         <div class="matchup-title">
           <span>{{ label }}</span>
           <strong>{{ format }}</strong>
@@ -550,6 +684,12 @@ import {
           <span>Court TBD</span>
           <span>Time TBD</span>
           <span>Ref: TBD</span>
+        </div>
+        <div class="bracket-expanded-details" *ngIf="stage && expandedBracketStage === stage">
+          <div><span>Format</span><strong>{{ format }}</strong></div>
+          <div><span>Status</span><strong>Scheduled</strong></div>
+          <div><span>Court</span><strong>TBD</strong></div>
+          <div><span>Referee</span><strong>TBD</strong></div>
         </div>
       </ng-template>
 
@@ -1790,7 +1930,7 @@ import {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        gap: 0.45rem;
+        gap: 0.38rem;
       }
 
       .official-bracket-score strong {
@@ -1799,36 +1939,205 @@ import {
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--ink);
-        font-size: 0.88rem;
+        font-size: 0.84rem;
+        line-height: 1.15;
       }
 
       .official-bracket-score strong:last-child {
         text-align: right;
       }
 
-      .official-bracket-score span {
-        padding: 0.24rem 0.45rem;
-        border-radius: 0.65rem;
-        background: rgba(15, 23, 42, 0.6);
+      .official-bracket-score .winning-team {
         color: var(--ink);
         font-weight: 950;
       }
 
+      .official-bracket-score .losing-team {
+        color: rgba(203, 213, 225, 0.54);
+        text-decoration: line-through;
+        text-decoration-thickness: 0.08em;
+        text-decoration-color: rgba(203, 213, 225, 0.5);
+      }
+
+      .official-bracket-score span {
+        padding: 0.22rem 0.38rem;
+        border-radius: 0.65rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--ink);
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
       .bracket-arena {
-        gap: 1rem;
-        padding: 1rem;
+        gap: clamp(0.7rem, 1.2vw, 1rem);
+        padding: clamp(0.7rem, 1.4vw, 1rem);
         border: 1px solid rgba(20, 184, 166, 0.18);
         border-radius: 1.2rem;
         background:
           radial-gradient(circle at 50% 20%, rgba(20, 184, 166, 0.1), transparent 34%),
           linear-gradient(135deg, rgba(2, 6, 23, 0.42), rgba(15, 23, 42, 0.34));
-        overflow: hidden;
+        overflow: visible;
+      }
+
+      .official-bracket-layout {
+        min-width: 0;
+      }
+
+      .desktop-knockout-board {
+        display: grid;
+        grid-template-columns:
+          minmax(0, 1.55fr)
+          minmax(0, 0.9fr)
+          minmax(0, 1.55fr);
+        align-items: center;
+        gap: clamp(1rem, 1.6vw, 1.35rem);
+        min-width: 0;
+        padding: clamp(0.75rem, 1.35vw, 1rem);
+        border: 1px solid rgba(20, 184, 166, 0.18);
+        border-radius: 1.15rem;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.08), transparent 34%),
+          linear-gradient(135deg, rgba(2, 6, 23, 0.44), rgba(15, 23, 42, 0.36));
+      }
+
+      .bracket-pair {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+        grid-template-rows: auto auto;
+        align-items: center;
+        gap: 0.68rem 0.82rem;
+        min-width: 0;
+      }
+
+      .bracket-pair-right {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+      }
+
+      .bracket-pair-left::after,
+      .bracket-pair-right::before {
+        content: "";
+        position: absolute;
+        top: 55%;
+        width: 0.85rem;
+        border-top: 1px solid rgba(20, 184, 166, 0.3);
+      }
+
+      .bracket-pair-left::after {
+        right: -0.85rem;
+      }
+
+      .bracket-pair-right::before {
+        left: -0.85rem;
+      }
+
+      .qf-heading,
+      .sf-heading {
+        align-self: end;
+      }
+
+      .bracket-pair-left .qf-heading,
+      .bracket-pair-left .qf-pair-stack {
+        grid-column: 1;
+      }
+
+      .bracket-pair-left .sf-heading,
+      .bracket-pair-left .semifinal-node {
+        grid-column: 2;
+      }
+
+      .bracket-pair-right .sf-heading,
+      .bracket-pair-right .semifinal-node {
+        grid-column: 1;
+      }
+
+      .bracket-pair-right .qf-heading,
+      .bracket-pair-right .qf-pair-stack {
+        grid-column: 2;
+      }
+
+      .qf-pair-stack {
+        display: grid;
+        gap: 0.78rem;
+        min-width: 0;
+      }
+
+      .semifinal-node {
+        align-self: center;
+      }
+
+      .bracket-column {
+        position: relative;
+        display: grid;
+        align-content: center;
+        gap: 0.72rem;
+        min-width: 0;
+      }
+
+      .bracket-column:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: -0.72rem;
+        width: 0.72rem;
+        border-top: 1px solid rgba(20, 184, 166, 0.28);
+      }
+
+      .desktop-knockout-board > .bracket-column::after {
+        display: none;
+      }
+
+      .qf-column {
+        gap: 0.78rem;
+      }
+
+      .semifinal-column {
+        gap: 0.9rem;
+      }
+
+      .final-column {
+        gap: 0.72rem;
+      }
+
+      .bracket-node {
+        min-width: 0;
+        padding: 0.62rem;
+        border-radius: 0.88rem;
+      }
+
+      .bracket-node-body {
+        display: grid;
+        gap: 0.42rem;
+        min-width: 0;
+        cursor: pointer;
+      }
+
+      .bracket-node-body:focus-visible {
+        outline: 2px solid rgba(20, 184, 166, 0.58);
+        outline-offset: 3px;
+        border-radius: 0.7rem;
+      }
+
+      .bracket-node .official-meta {
+        display: none;
+      }
+
+      .bracket-node-body.expanded .official-meta {
+        display: flex;
+      }
+
+      .mobile-knockout-track {
+        display: none;
+      }
+
+      .mobile-bracket-detail-panel {
+        display: none;
       }
 
       .bracket-lane,
       .bracket-center-lane {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.68rem;
         min-width: 0;
       }
 
@@ -1838,7 +2147,7 @@ import {
 
       .bracket-lane .round-heading,
       .bracket-center-lane .round-heading {
-        min-height: 3.4rem;
+        min-height: 2.45rem;
         align-content: end;
       }
 
@@ -1846,8 +2155,8 @@ import {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        gap: 0.65rem;
-        padding: 0.28rem 0;
+        gap: 0.45rem;
+        padding: 0.2rem 0;
       }
 
       .placeholder-bracket-score strong {
@@ -1856,7 +2165,7 @@ import {
         text-overflow: ellipsis;
         white-space: normal;
         color: var(--ink);
-        font-size: 0.92rem;
+        font-size: 0.82rem;
         line-height: 1.35;
       }
 
@@ -1879,6 +2188,45 @@ import {
       .compact-champion {
         min-height: auto;
         padding: 0.85rem;
+      }
+
+      .bracket-expanded-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.38rem;
+        padding-top: 0.45rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .bracket-expanded-details div {
+        min-width: 0;
+        padding: 0.38rem 0.42rem;
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 0.66rem;
+        background: rgba(2, 6, 23, 0.24);
+      }
+
+      .bracket-expanded-details span,
+      .bracket-expanded-details strong {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .bracket-expanded-details span {
+        color: var(--muted);
+        font-size: 0.56rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .bracket-expanded-details strong {
+        margin-top: 0.1rem;
+        color: var(--ink);
+        font-size: 0.72rem;
+        font-weight: 900;
       }
 
       @media (min-width: 860px) {
@@ -2027,7 +2375,7 @@ import {
         }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 767px) {
         .viewer-page {
           gap: 0.72rem;
         }
@@ -2087,6 +2435,437 @@ import {
 
         .progression-summary span {
           white-space: normal;
+        }
+
+        .official-board.bracket-arena,
+        .desktop-knockout-board {
+          display: none;
+        }
+
+        .mobile-knockout-track {
+          display: flex;
+          gap: 0.75rem;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+          padding: 0.08rem 0.85rem 0.75rem 0;
+          overflow-x: auto;
+          overflow-y: hidden;
+          overscroll-behavior-inline: contain;
+          scroll-snap-type: x mandatory;
+          scroll-padding-inline: 0 0.85rem;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-knockout-track::-webkit-scrollbar {
+          display: none;
+        }
+
+        .mobile-bracket-round {
+          position: relative;
+          flex: 0 0 min(300px, calc(100vw - 2rem));
+          display: grid;
+          align-content: start;
+          gap: 0.56rem;
+          min-width: 0;
+          max-width: min(300px, calc(100vw - 2rem));
+          box-sizing: border-box;
+          scroll-snap-align: start;
+          scroll-snap-stop: always;
+        }
+
+        .mobile-semifinal-round {
+          grid-template-rows: auto repeat(2, minmax(13.15rem, auto));
+        }
+
+        .mobile-semi-pair-slot {
+          display: grid;
+          align-items: center;
+          min-height: 13.15rem;
+        }
+
+        .mobile-bracket-round:not(:last-child)::after {
+          display: none;
+        }
+
+        .mobile-knockout-card {
+          display: grid;
+          gap: 0.34rem;
+          width: 100%;
+          min-height: 5.55rem;
+          padding: 0.52rem;
+          border: 1px solid rgba(20, 184, 166, 0.18);
+          border-radius: 0.9rem;
+          background:
+            linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 52%),
+            rgba(15, 23, 42, 0.72);
+          box-shadow: 0 10px 22px rgba(2, 6, 23, 0.22);
+          color: var(--ink);
+          text-align: left;
+          cursor: pointer;
+          transition:
+            border-color 160ms ease,
+            background 160ms ease,
+            transform 160ms ease;
+        }
+
+        .mobile-knockout-card.selected {
+          border-color: rgba(20, 184, 166, 0.48);
+          background:
+            linear-gradient(135deg, rgba(20, 184, 166, 0.12), transparent 56%),
+            rgba(15, 23, 42, 0.82);
+        }
+
+        .mobile-knockout-card.final-card {
+          border-color: rgba(245, 158, 11, 0.46);
+          background:
+            linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent 58%),
+            rgba(15, 23, 42, 0.76);
+        }
+
+        .mobile-knockout-card.third-card {
+          opacity: 0.9;
+        }
+
+        .mobile-knockout-card:focus-visible {
+          outline: 2px solid rgba(20, 184, 166, 0.58);
+          outline-offset: 2px;
+        }
+
+        .mobile-card-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+        }
+
+        .mobile-card-top span {
+          color: var(--teal);
+          font-size: 0.64rem;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .mobile-card-top strong,
+        .mobile-knockout-card small {
+          color: var(--muted);
+          font-size: 0.64rem;
+          font-weight: 900;
+        }
+
+        .mobile-card-score {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+          align-items: center;
+          gap: 0.32rem;
+          min-width: 0;
+        }
+
+        .mobile-card-score strong {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: var(--ink);
+          font-size: 0.8rem;
+          font-weight: 900;
+        }
+
+        .mobile-card-score strong:last-child {
+          text-align: right;
+        }
+
+        .mobile-card-score span {
+          padding: 0.18rem 0.32rem;
+          border-radius: 0.62rem;
+          background: rgba(2, 6, 23, 0.36);
+          color: var(--ink);
+          font-size: 0.8rem;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .mobile-card-score.placeholder {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .mobile-card-score.placeholder strong:last-child {
+          text-align: left;
+        }
+
+        .mobile-card-score .winning-team {
+          color: var(--ink);
+          font-weight: 950;
+        }
+
+        .mobile-card-score .losing-team {
+          color: rgba(203, 213, 225, 0.54);
+          text-decoration: line-through;
+          text-decoration-thickness: 0.08em;
+          text-decoration-color: rgba(203, 213, 225, 0.5);
+        }
+
+        .mobile-round-title {
+          position: relative;
+          display: grid;
+          gap: 0.18rem;
+          padding: 0.2rem 0.1rem 0.1rem;
+        }
+
+        .mobile-round-title span {
+          width: fit-content;
+          padding: 0.2rem 0.42rem;
+          border-radius: 999px;
+          background: rgba(20, 184, 166, 0.1);
+          color: #99f6e4;
+          font-size: 0.6rem;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .mobile-round-title h4 {
+          margin: 0;
+          color: var(--ink);
+          font-size: 0.95rem;
+        }
+
+        .mobile-placement-title {
+          margin-top: 0.3rem;
+        }
+
+        .mobile-bracket-match {
+          width: 100%;
+          box-sizing: border-box;
+          gap: 0.34rem;
+          min-height: 5.65rem;
+          padding: 0.5rem;
+          border-radius: 0.9rem;
+          background:
+            linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 52%),
+            rgba(15, 23, 42, 0.72);
+          box-shadow: 0 10px 22px rgba(2, 6, 23, 0.22);
+          cursor: pointer;
+          transition:
+            border-color 160ms ease,
+            background 160ms ease,
+            transform 160ms ease;
+        }
+
+        .mobile-bracket-match:focus-visible {
+          outline: 2px solid rgba(20, 184, 166, 0.58);
+          outline-offset: 2px;
+        }
+
+        .mobile-bracket-match.expanded {
+          border-color: rgba(20, 184, 166, 0.42);
+          background:
+            linear-gradient(135deg, rgba(20, 184, 166, 0.1), transparent 52%),
+            rgba(15, 23, 42, 0.78);
+        }
+
+        .mobile-bracket-match .bracket-node-body {
+          gap: 0.32rem;
+        }
+
+        .mobile-bracket-match .matchup-title {
+          gap: 0.4rem;
+        }
+
+        .mobile-bracket-match .matchup-title span {
+          font-size: 0.64rem;
+        }
+
+        .mobile-bracket-match .matchup-title strong {
+          font-size: 0.66rem;
+        }
+
+        .mobile-bracket-match .official-bracket-score {
+          gap: 0.28rem;
+        }
+
+        .mobile-bracket-match .official-bracket-score strong {
+          font-size: 0.78rem;
+        }
+
+        .mobile-bracket-match .official-bracket-score span {
+          padding: 0.18rem 0.3rem;
+          font-size: 0.78rem;
+        }
+
+        .mobile-bracket-match .official-meta {
+          display: none;
+          gap: 0.3rem;
+        }
+
+        .mobile-bracket-match .bracket-node-body.expanded .official-meta {
+          display: flex;
+        }
+
+        .mobile-bracket-match .official-meta span {
+          padding: 0.24rem 0.36rem;
+          font-size: 0.62rem;
+        }
+
+        .mobile-bracket-match .placeholder-bracket-score {
+          gap: 0.4rem;
+        }
+
+        .mobile-bracket-match .placeholder-bracket-score strong {
+          font-size: 0.82rem;
+          line-height: 1.25;
+        }
+
+        .mobile-final-round {
+          flex-basis: min(300px, calc(100vw - 2rem));
+        }
+
+        .mobile-final-round .center-final {
+          min-height: 5.9rem;
+          border-color: rgba(245, 158, 11, 0.5);
+          box-shadow:
+            0 0 0 1px rgba(245, 158, 11, 0.1),
+            0 10px 22px rgba(2, 6, 23, 0.24);
+        }
+
+        .mobile-final-round .third-place-match {
+          min-height: 5.35rem;
+          opacity: 0.88;
+        }
+
+        .champion-round-mobile {
+          flex-basis: min(300px, calc(100vw - 2rem));
+        }
+
+        .mobile-champion-card {
+          width: 100%;
+          box-sizing: border-box;
+          min-height: 5.9rem;
+          align-content: center;
+          padding: 0.62rem;
+          border-radius: 0.95rem;
+        }
+
+        .mobile-champion-card strong {
+          font-size: 0.95rem;
+          line-height: 1.15;
+        }
+
+        .mobile-champion-card small {
+          font-size: 0.72rem;
+          line-height: 1.3;
+        }
+
+        .mobile-bracket-detail-panel {
+          display: grid;
+          gap: 0.55rem;
+          padding: 0.68rem;
+          border: 1px solid rgba(20, 184, 166, 0.2);
+          border-radius: 1rem;
+          background: rgba(15, 23, 42, 0.56);
+          box-shadow: 0 12px 26px rgba(2, 6, 23, 0.22);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+        }
+
+        .mobile-detail-heading,
+        .mobile-detail-score {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.55rem;
+          min-width: 0;
+        }
+
+        .mobile-detail-heading span {
+          padding: 0.22rem 0.42rem;
+          border-radius: 999px;
+          background: rgba(20, 184, 166, 0.12);
+          color: #99f6e4;
+          font-size: 0.62rem;
+          font-weight: 950;
+        }
+
+        .mobile-detail-heading strong,
+        .mobile-detail-score strong {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: var(--ink);
+          font-size: 0.86rem;
+        }
+
+        .mobile-detail-score span {
+          flex: 0 0 auto;
+          color: var(--ink);
+          font-weight: 950;
+        }
+
+        .mobile-detail-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.36rem;
+        }
+
+        .mobile-detail-grid div {
+          min-width: 0;
+          padding: 0.38rem 0.42rem;
+          border: 1px solid rgba(148, 163, 184, 0.1);
+          border-radius: 0.68rem;
+          background: rgba(2, 6, 23, 0.24);
+        }
+
+        .mobile-detail-grid span,
+        .mobile-detail-grid strong {
+          display: block;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .mobile-detail-grid span {
+          color: var(--muted);
+          font-size: 0.54rem;
+          font-weight: 950;
+          text-transform: uppercase;
+        }
+
+        .mobile-detail-grid strong {
+          margin-top: 0.1rem;
+          color: var(--ink);
+          font-size: 0.68rem;
+          font-weight: 900;
+        }
+
+        .mobile-series-note {
+          margin: 0;
+          color: var(--muted);
+          font-size: 0.72rem;
+          font-weight: 850;
+          line-height: 1.35;
+        }
+
+        .bracket-expanded-details {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.3rem;
+          padding-top: 0.36rem;
+        }
+
+        .bracket-expanded-details div {
+          padding: 0.32rem 0.36rem;
+        }
+
+        .bracket-expanded-details span {
+          font-size: 0.52rem;
+        }
+
+        .bracket-expanded-details strong {
+          font-size: 0.66rem;
         }
 
         .viewer-tabs {
@@ -2270,10 +3049,24 @@ export class TournamentViewerPageComponent implements OnDestroy {
   activeTab: 'matches' | 'groups' | 'standings' | 'brackets' = 'matches';
   activeMatchView: 'all' | 'live' = 'all';
   expandedMatchId?: number;
+  expandedBracketStage?: string;
+  selectedMobileBracketStage?: string;
   selectedBracket: PublicBracketKey = 'champions';
   bracketMode: 'official' | 'seeding' = 'official';
   tournamentId = Number(this.route.snapshot.paramMap.get('id'));
   isBracketPage = this.route.snapshot.routeConfig?.path === 'viewer/tournament/:id/brackets';
+  quarterfinalSlots = [
+    { stage: 'quarter_final_1', label: 'QF1', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_4', label: 'QF4', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_2', label: 'QF2', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+    { stage: 'quarter_final_3', label: 'QF3', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
+  ];
+  semifinalSlots = [
+    { stage: 'semi_final_1', label: 'SF1', title: 'Winner QF1 vs Winner QF4', body: 'Winner QF1 vs Winner QF4', format: 'Best of 1' },
+    { stage: 'semi_final_2', label: 'SF2', title: 'Winner QF2 vs Winner QF3', body: 'Winner QF2 vs Winner QF3', format: 'Best of 1' },
+  ];
+  finalSlot = { stage: 'final', label: 'F', title: 'Winner SF1 vs Winner SF2', body: 'Winner SF1 vs Winner SF2', format: 'Best of 3' };
+  thirdPlaceSlot = { stage: 'third_place', label: '3RD', title: 'Loser SF1 vs Loser SF2', body: 'Loser SF1 vs Loser SF2', format: 'Best of 1' };
   leftQuarterfinalSlots = [
     { stage: 'quarter_final_1', label: 'QF1', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
     { stage: 'quarter_final_4', label: 'QF4', title: '? vs ?', body: '? vs ?', format: 'Best of 1' },
@@ -2362,6 +3155,16 @@ export class TournamentViewerPageComponent implements OnDestroy {
       { title: 'Division B · Premier League', matches: source.filter((match) => this.isPremierMatch(match)) },
       { title: 'Independent / Other', matches: source.filter((match) => this.isOtherMatch(match)) },
     ];
+  }
+
+  get selectedMobileBracketSlot() {
+    if (!this.selectedMobileBracketStage) {
+      return undefined;
+    }
+
+    return [...this.quarterfinalSlots, ...this.semifinalSlots, this.finalSlot, this.thirdPlaceSlot].find(
+      (slot) => slot.stage === this.selectedMobileBracketStage
+    );
   }
 
   get officialKnockoutMatches(): Match[] {
@@ -2504,6 +3307,37 @@ export class TournamentViewerPageComponent implements OnDestroy {
 
   toggleMatch(match: Match): void {
     this.expandedMatchId = this.expandedMatchId === match.id ? undefined : match.id;
+  }
+
+  toggleBracketStage(stage: string): void {
+    this.expandedBracketStage = this.expandedBracketStage === stage ? undefined : stage;
+  }
+
+  selectMobileBracketStage(stage: string): void {
+    this.selectedMobileBracketStage = this.selectedMobileBracketStage === stage ? undefined : stage;
+  }
+
+  isBracketWinner(match: Match, side: 'a' | 'b'): boolean {
+    if (match.status !== 'Completed' || !match.team_a || !match.team_b || match.score_a === match.score_b) {
+      return false;
+    }
+
+    const winner = match.winner_team || (match.score_a > match.score_b ? match.team_a : match.team_b);
+    return side === 'a' ? winner === match.team_a : winner === match.team_b;
+  }
+
+  isBracketLoser(match: Match, side: 'a' | 'b'): boolean {
+    if (match.status !== 'Completed' || !match.team_a || !match.team_b || match.score_a === match.score_b) {
+      return false;
+    }
+
+    return !this.isBracketWinner(match, side);
+  }
+
+  getSeriesSummary(match: Match): string {
+    return (match.best_of || 1) > 1
+      ? `${match.score_a} - ${match.score_b} series score. Set breakdown will appear when set scoring is available.`
+      : `${match.score_a} - ${match.score_b}`;
   }
 
   getCompactStatusPrimary(match: Match): string {
