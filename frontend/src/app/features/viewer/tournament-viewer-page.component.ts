@@ -209,8 +209,22 @@ import {
             <span>{{ standings.length }} Teams</span>
           </div>
 
+          <details class="tiebreak-rules">
+            <summary>
+              <span>Tiebreak Rules</span>
+              <small>How ranks are ordered</small>
+            </summary>
+            <ol>
+              <li><strong>Match wins</strong> decide the table first.</li>
+              <li><strong>Point Differential</strong> breaks tied win totals.</li>
+              <li><strong>Points For (PF)</strong> is the next tiebreak.</li>
+              <li><strong>Head-to-head</strong> is used when the first three are still tied.</li>
+            </ol>
+            <p>If teams are still level after those checks, the stored rank keeps the table deterministic.</p>
+          </details>
+
           <div class="standings-list" *ngIf="standings.length; else noStandings">
-            <article class="standing-card" *ngFor="let standing of standings">
+            <article class="standing-card" *ngFor="let standing of standings; let i = index">
               <div class="rank-block">
                 <strong>{{ standing.rank }}</strong>
                 <span>Rank</span>
@@ -219,16 +233,16 @@ import {
               <div class="standing-main">
                 <strong>{{ getStandingTeamName(standing) }}</strong>
                 <small *ngIf="getPoolLabel(standing)">{{ getPoolLabel(standing) }}</small>
+                <small class="tie-note" *ngIf="getStandingTiebreakNote(standing, i) as note">{{ note }}</small>
               </div>
 
               <div class="standing-stats">
-                <span><strong>{{ standing.wins }}</strong> W</span>
-                <span><strong>{{ standing.losses }}</strong> L</span>
+                <span class="primary-stat"><strong>{{ standing.wins }}-{{ standing.losses }}</strong> W-L</span>
                 <span><strong>{{ standing.points_scored }}</strong> PF</span>
                 <span><strong>{{ standing.points_given }}</strong> PA</span>
-                <span><strong>{{ getPointDifferential(standing) }}</strong> Diff</span>
-                <span><strong>{{ standing.net_run_rate }}</strong> Rating</span>
+                <span><strong>{{ getSignedPointDifferential(standing) }}</strong> Diff</span>
               </div>
+
             </article>
           </div>
 
@@ -1558,6 +1572,49 @@ import {
         -webkit-backdrop-filter: blur(16px);
       }
 
+      .tiebreak-rules {
+        margin-bottom: 0.85rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.42);
+        overflow: hidden;
+      }
+
+      .tiebreak-rules summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.8rem 0.9rem;
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 0.86rem;
+        font-weight: 900;
+        list-style-position: inside;
+      }
+
+      .tiebreak-rules summary small {
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .tiebreak-rules ol {
+        margin: 0;
+        padding: 0 1.2rem 0.8rem 2.1rem;
+        color: var(--text);
+        font-size: 0.8rem;
+        line-height: 1.55;
+      }
+
+      .tiebreak-rules p {
+        margin: -0.2rem 0 0;
+        padding: 0 0.9rem 0.9rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.45;
+      }
+
       .rank-block {
         display: grid;
         place-items: center;
@@ -1595,10 +1652,20 @@ import {
         color: var(--ink);
       }
 
+      .tie-note {
+        justify-self: start;
+        padding: 0.25rem 0.45rem;
+        border: 1px solid rgba(20, 184, 166, 0.22);
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.1);
+        color: #b8fff3 !important;
+        text-transform: none !important;
+      }
+
       .standing-stats {
         grid-column: 1 / -1;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.45rem;
       }
 
@@ -1617,6 +1684,11 @@ import {
         display: block;
         color: var(--ink);
         font-size: 0.95rem;
+      }
+
+      .standing-stats .primary-stat {
+        background: rgba(37, 99, 235, 0.18);
+        color: var(--text);
       }
 
       .match-grid {
@@ -2250,7 +2322,7 @@ import {
 
         .standing-stats {
           grid-column: auto;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .bracket-board {
@@ -3412,12 +3484,68 @@ export class TournamentViewerPageComponent implements OnDestroy {
     return standing.points_scored - standing.points_given;
   }
 
+  getSignedPointDifferential(standing: Standing): string {
+    const differential = this.getPointDifferential(standing);
+    return differential > 0 ? `+${differential}` : String(differential);
+  }
+
+  getStandingTiebreakNote(standing: Standing, index: number): string {
+    const next = this.standings[index + 1];
+    if (this.hasSameWinTotal(standing, next)) {
+      return `Ahead on ${this.getTiebreakReason(standing, next)}`;
+    }
+
+    const previous = this.standings[index - 1];
+    if (this.hasSameWinTotal(previous, standing)) {
+      return `Separated by ${this.getTiebreakReason(previous, standing)}`;
+    }
+
+    return '';
+  }
+
   getPoolLabel(standing: Standing): string {
     if (!standing.pool_type) {
       return '';
     }
 
     return `${standing.pool_type.charAt(0).toUpperCase()}${standing.pool_type.slice(1)} pool`;
+  }
+
+  private hasSameWinTotal(a?: Standing, b?: Standing): boolean {
+    return Boolean(a && b && a.wins === b.wins);
+  }
+
+  private getTiebreakReason(a: Standing, b: Standing): string {
+    if (this.getPointDifferential(a) !== this.getPointDifferential(b)) {
+      return 'point differential';
+    }
+
+    if (a.points_scored !== b.points_scored) {
+      return 'points scored';
+    }
+
+    const headToHeadWinner = this.getHeadToHeadWinnerId(a.team, b.team);
+    if (headToHeadWinner) {
+      return 'head-to-head';
+    }
+
+    return 'stored rank';
+  }
+
+  private getHeadToHeadWinnerId(teamAId: number, teamBId: number): number | null {
+    const directMatch = this.matches.find(
+      (match) =>
+        match.match_type === 'league' &&
+        match.status === 'Completed' &&
+        ((match.team_a === teamAId && match.team_b === teamBId) ||
+          (match.team_a === teamBId && match.team_b === teamAId)),
+    );
+
+    if (!directMatch) {
+      return null;
+    }
+
+    return directMatch.winner_team || (directMatch.score_a > directMatch.score_b ? directMatch.team_a || null : directMatch.team_b || null);
   }
 
   private isPoolMatch(match: Match): boolean {

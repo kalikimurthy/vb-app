@@ -1,4 +1,5 @@
 from decimal import Decimal
+from functools import cmp_to_key
 
 from django.db import transaction
 
@@ -11,6 +12,10 @@ def _safe_nrr(scored: int, given: int) -> Decimal:
     if scored == 0 and given == 0:
         return Decimal("0")
     return Decimal(scored - given) / Decimal(max(scored + given, 1))
+
+
+def _point_differential(row: dict) -> int:
+    return row["points_scored"] - row["points_given"]
 
 
 @transaction.atomic
@@ -34,6 +39,7 @@ def recalculate_tournament_standings(tournament_id: int) -> None:
         status=MatchStatus.COMPLETED,
     )
 
+    head_to_head_winners = {}
     for match in completed:
         if not match.team_a_id or not match.team_b_id:
             continue
@@ -49,19 +55,35 @@ def recalculate_tournament_standings(tournament_id: int) -> None:
         if match.score_a > match.score_b:
             a["wins"] += 1
             b["losses"] += 1
+            head_to_head_winners[frozenset((match.team_a_id, match.team_b_id))] = match.team_a_id
         else:
             b["wins"] += 1
             a["losses"] += 1
+            head_to_head_winners[frozenset((match.team_a_id, match.team_b_id))] = match.team_b_id
 
-    sorted_rows = sorted(
-        rows.values(),
-        key=lambda r: (
-            r["wins"],
-            _safe_nrr(r["points_scored"], r["points_given"]),
-            r["points_scored"],
-        ),
-        reverse=True,
-    )
+    def compare_rows(a: dict, b: dict) -> int:
+        for left, right in (
+            (a["wins"], b["wins"]),
+            (_point_differential(a), _point_differential(b)),
+            (a["points_scored"], b["points_scored"]),
+        ):
+            if left != right:
+                return -1 if left > right else 1
+
+        winner_id = head_to_head_winners.get(frozenset((a["team"].id, b["team"].id)))
+        if winner_id == a["team"].id:
+            return -1
+        if winner_id == b["team"].id:
+            return 1
+
+        left_name = a["team"].name.lower()
+        right_name = b["team"].name.lower()
+        if left_name != right_name:
+            return -1 if left_name < right_name else 1
+
+        return a["team"].id - b["team"].id
+
+    sorted_rows = sorted(rows.values(), key=cmp_to_key(compare_rows))
 
     standing_objs = []
     for idx, row in enumerate(sorted_rows, start=1):

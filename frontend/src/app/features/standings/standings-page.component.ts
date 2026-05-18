@@ -21,10 +21,10 @@ import { Standing, Tournament } from '../../core/models';
       </div>
       <div class="mobile-scroll">
         <table>
-          <tr><th>Rank</th><th>Team</th><th>Wins</th><th>Losses</th><th>Points For</th><th>Points Against</th><th>NRR</th></tr>
+          <tr><th>Rank</th><th>Team</th><th>W-L</th><th>PF</th><th>PA</th><th>Diff</th></tr>
           <tr *ngFor="let s of standings">
-            <td>{{ s.rank }}</td><td>{{ s.team_name || s.team }}</td><td>{{ s.wins }}</td><td>{{ s.losses }}</td>
-            <td>{{ s.points_scored }}</td><td>{{ s.points_given }}</td><td>{{ s.net_run_rate }}</td>
+            <td>{{ s.rank }}</td><td>{{ s.team_name || s.team }}</td><td>{{ s.wins }}-{{ s.losses }}</td>
+            <td>{{ s.points_scored }}</td><td>{{ s.points_given }}</td><td>{{ getPointDifferential(s) }}</td>
           </tr>
         </table>
       </div>
@@ -55,5 +55,10 @@ export class StandingsPageComponent {
       return;
     }
     this.api.action('standings', 'recalculate', { tournament: this.tournamentId }).subscribe(() => this.load());
+  }
+
+  getPointDifferential(standing: Standing): string {
+    const differential = standing.points_scored - standing.points_given;
+    return differential > 0 ? `+${differential}` : String(differential);
   }
 }
