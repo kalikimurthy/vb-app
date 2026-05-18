@@ -108,7 +108,13 @@ import {
         </section>
 
         <div class="empty-state" *ngIf="activeMatchView === 'live' && !liveMatches.length">
-          No live matches right now.
+          <strong>No live matches right now.</strong>
+          <span>Switch to All Games to see the full official schedule.</span>
+        </div>
+
+        <div class="empty-state" *ngIf="activeMatchView === 'all' && !matches.length">
+          <strong>No matches published yet.</strong>
+          <span>The official schedule will appear here once matches are created.</span>
         </div>
 
         <ng-container *ngFor="let section of publicMatchSections">
@@ -193,13 +199,19 @@ import {
               </div>
 
               <ng-template #emptyGroup>
-                <div class="empty-state">Teams will appear when this group is assigned.</div>
+                <div class="empty-state">
+                  <strong>No teams assigned.</strong>
+                  <span>This pool will fill in after tournament setup is complete.</span>
+                </div>
               </ng-template>
             </article>
           </div>
 
           <ng-template #noGroups>
-            <div class="empty-state">Groups will appear once tournament setup is available.</div>
+            <div class="empty-state">
+              <strong>No groups available yet.</strong>
+              <span>Pool cards will appear after groups are created.</span>
+            </div>
           </ng-template>
         </section>
       </ng-container>
@@ -257,7 +269,10 @@ import {
           </div>
 
           <ng-template #noStandings>
-            <div class="empty-state">Standings will appear after completed matches are recorded.</div>
+            <div class="empty-state">
+              <strong>No standings yet.</strong>
+              <span>Standings update after completed pool matches are recorded.</span>
+            </div>
           </ng-template>
         </section>
       </ng-container>
@@ -491,12 +506,14 @@ import {
             </div>
 
             <div class="empty-state" *ngIf="bracketMode === 'official' && !officialKnockoutMatches.length">
-              Official knockout matches will appear after they are generated.
+              <strong>Official bracket not generated yet.</strong>
+              <span>Knockout matches will appear here after admins create them.</span>
             </div>
 
             <ng-container *ngIf="bracketMode === 'seeding'">
               <div class="empty-state" *ngIf="!bracket.isComplete">
-                Bracket seeds will appear after group standings are available. {{ bracket.seeds.length }}/{{ bracketSize }} seeds are ready.
+                <strong>Seeding preview is still filling in.</strong>
+                <span>{{ bracket.seeds.length }}/{{ bracketSize }} seeds are ready after pool standings update.</span>
               </div>
 
               <div class="bracket-board seeding-board" *ngIf="bracket.seeds.length">
@@ -556,7 +573,10 @@ import {
             </div>
 
             <ng-template #noEliminated>
-              <div class="empty-state">Eliminated teams will appear after group standings are available.</div>
+              <div class="empty-state">
+                <strong>No eliminated teams yet.</strong>
+                <span>This section fills after overall pool rankings are available.</span>
+              </div>
             </ng-template>
           </section>
         </section>
@@ -797,9 +817,16 @@ import {
 
     <ng-template #loading>
       <article class="viewer-page">
-        <div class="panel empty-state" *ngIf="viewerError; else loadingMessage">{{ viewerError }}</div>
+        <div class="panel empty-state error-state" *ngIf="viewerError; else loadingMessage">
+          <strong>Could not load tournament.</strong>
+          <span>{{ viewerError }}</span>
+        </div>
         <ng-template #loadingMessage>
-          <div class="panel empty-state">Loading tournament scoreboard...</div>
+          <div class="panel empty-state loading-state">
+            <span class="loading-dot"></span>
+            <strong>Loading tournament scoreboard...</strong>
+            <span>Getting matches, standings, groups, and bracket status.</span>
+          </div>
         </ng-template>
       </article>
     </ng-template>
@@ -808,14 +835,19 @@ import {
     `
       .viewer-page {
         display: grid;
-        gap: 0.9rem;
+        gap: clamp(0.72rem, 1.7vw, 1rem);
         max-width: 100%;
         overflow-x: hidden;
+      }
+
+      .viewer-page > * {
+        min-width: 0;
       }
 
       .viewer-hero h2 {
         margin-top: 0.25rem;
         font-size: clamp(1.55rem, 4vw, 2.5rem);
+        line-height: 1.05;
       }
 
       .viewer-status {
@@ -871,7 +903,7 @@ import {
       }
 
       .trust-labels span {
-        padding: 0.34rem 0.58rem;
+        padding: 0.3rem 0.56rem;
         border: 1px solid rgba(20, 184, 166, 0.22);
         border-radius: 999px;
         background: rgba(20, 184, 166, 0.1);
@@ -892,6 +924,11 @@ import {
         font-size: 0.76rem;
         font-weight: 900;
         text-decoration: none;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
       }
 
       .viewer-link-pill {
@@ -900,16 +937,85 @@ import {
         color: #bfdbfe;
       }
 
+      .viewer-link-pill:hover,
+      .viewer-link-pill:focus-visible,
+      .viewer-tabs a:hover,
+      .viewer-tabs button:hover,
+      .match-view-toggle button:hover,
+      .league-switch button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(20, 184, 166, 0.42);
+        color: var(--ink);
+      }
+
+      .viewer-tabs a:focus-visible,
+      .viewer-tabs button:focus-visible,
+      .match-view-toggle button:focus-visible,
+      .league-switch button:focus-visible {
+        outline: 2px solid rgba(20, 184, 166, 0.58);
+        outline-offset: 2px;
+      }
+
+      .viewer-page .empty-state {
+        display: grid;
+        gap: 0.24rem;
+        min-width: 0;
+        padding: 0.88rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 1rem;
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 56%),
+          rgba(15, 23, 42, 0.5);
+        color: var(--muted);
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.18);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .viewer-page .empty-state strong {
+        color: var(--ink);
+        font-size: 0.94rem;
+        line-height: 1.25;
+      }
+
+      .viewer-page .empty-state span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .loading-state {
+        place-items: center;
+        min-height: 10rem;
+        text-align: center;
+      }
+
+      .error-state {
+        border-color: rgba(239, 68, 68, 0.28);
+        background:
+          linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent 56%),
+          rgba(127, 29, 29, 0.16);
+      }
+
+      .loading-dot {
+        width: 0.72rem;
+        height: 0.72rem;
+        border-radius: 999px;
+        background: #14b8a6;
+        box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.42);
+        animation: livePulse 1.8s ease-out infinite;
+      }
+
       .viewer-summary {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.68rem;
       }
 
       .summary-card {
         display: grid;
-        gap: 0.38rem;
+        gap: 0.34rem;
         min-width: 0;
-        padding: 0.9rem;
+        padding: clamp(0.78rem, 1.8vw, 0.95rem);
         border: 1px solid var(--glass-border);
         border-radius: 1rem;
         background:
@@ -938,13 +1044,15 @@ import {
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--ink);
-        font-size: 1rem;
+        font-size: clamp(0.95rem, 2vw, 1.05rem);
+        line-height: 1.2;
       }
 
       .summary-card p {
         margin: 0;
         color: var(--muted);
-        font-size: 0.82rem;
+        font-size: 0.8rem;
+        line-height: 1.35;
       }
 
       .summary-card p strong {
@@ -963,7 +1071,7 @@ import {
         border-radius: 999px;
         background: rgba(15, 23, 42, 0.55);
         color: var(--muted-strong);
-        font-size: 0.72rem;
+        font-size: 0.68rem;
         font-weight: 850;
       }
 
@@ -971,7 +1079,7 @@ import {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.5rem;
-        padding: 0.35rem;
+        padding: 0.32rem;
         border: 1px solid var(--glass-border);
         border-radius: 1rem;
         background: rgba(15, 23, 42, 0.48);
@@ -984,7 +1092,7 @@ import {
       .viewer-tabs button,
       .viewer-tabs a {
         min-width: 0;
-        min-height: 2.55rem;
+        min-height: 2.45rem;
         padding-inline: 0.45rem;
         border: 1px solid transparent;
         background: transparent;
@@ -1007,17 +1115,19 @@ import {
           linear-gradient(135deg, rgba(37, 99, 235, 0.38), rgba(20, 184, 166, 0.22)),
           rgba(15, 23, 42, 0.45);
         color: var(--ink);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
       }
 
       .match-section {
         display: grid;
-        gap: 0.56rem;
+        gap: 0.52rem;
       }
 
       .match-section h3 {
         margin: 0;
         color: var(--ink);
-        font-size: 1rem;
+        font-size: 0.98rem;
+        letter-spacing: 0;
       }
 
       .match-section-heading {
@@ -1036,7 +1146,7 @@ import {
       .standings-section,
       .groups-section {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.68rem;
       }
 
       .projection-legend {
@@ -1048,12 +1158,12 @@ import {
 
       .legend-item {
         max-width: 100%;
-        padding: 0.38rem 0.58rem;
+        padding: 0.34rem 0.54rem;
         border: 1px solid var(--line);
         border-radius: 999px;
         background: rgba(15, 23, 42, 0.48);
         color: var(--muted-strong);
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-weight: 850;
       }
 
@@ -1079,14 +1189,14 @@ import {
 
       .groups-grid {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.68rem;
       }
 
       .group-projection-card {
         display: grid;
-        gap: 0.72rem;
+        gap: 0.66rem;
         min-width: 0;
-        padding: 0.88rem;
+        padding: 0.84rem;
         border: 1px solid var(--glass-border);
         border-radius: 1rem;
         background: rgba(15, 23, 42, 0.54);
@@ -1208,7 +1318,7 @@ import {
       .bracket-section,
       .eliminated-section {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.68rem;
         min-width: 0;
       }
 
@@ -1222,11 +1332,17 @@ import {
 
       .section-title h3 {
         margin: 0.12rem 0 0;
+        color: var(--ink);
+        font-size: clamp(1rem, 2vw, 1.18rem);
+        line-height: 1.15;
       }
 
       .section-title p:not(.kicker) {
         max-width: 44rem;
         margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.42;
       }
 
       .section-title span {
@@ -2695,6 +2811,23 @@ import {
           padding: 0.72rem;
         }
 
+        .viewer-page .empty-state {
+          padding: 0.74rem;
+          border-radius: 0.92rem;
+        }
+
+        .viewer-page .empty-state strong {
+          font-size: 0.9rem;
+        }
+
+        .viewer-page .empty-state span {
+          font-size: 0.78rem;
+        }
+
+        .loading-state {
+          min-height: 8rem;
+        }
+
         .section-title,
         .bracket-intro {
           align-items: flex-start;
@@ -3275,6 +3408,7 @@ import {
 
         .section-title p:not(.kicker) {
           overflow-wrap: anywhere;
+          font-size: 0.78rem;
         }
 
         .summary-card h3 {
